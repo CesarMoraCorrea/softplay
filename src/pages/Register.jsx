@@ -21,6 +21,7 @@ export default function Register() {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [captchaId, setCaptchaId] = useState('');
   const [captchaInput, setCaptchaInput] = useState('');
+  const [captchaVerified, setCaptchaVerified] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -96,6 +97,11 @@ export default function Register() {
   const handleCaptchaChange = (id, input) => {
     setCaptchaId(id);
     setCaptchaInput(input);
+    // Al cambiar input, la verificación podría cambiar; la controlamos vía onVerifiedChange desde Captcha
+  };
+
+  const handleCaptchaVerified = (isValid) => {
+    setCaptchaVerified(isValid);
   };
 
   const getPasswordStrengthColor = () => {
@@ -121,7 +127,7 @@ export default function Register() {
     // Verificar si hay errores
     if (Object.keys(formErrors).length === 0 && 
         formData.name && formData.email && formData.password && 
-        formData.password === formData.confirmPassword && captchaInput) {
+        formData.password === formData.confirmPassword && captchaInput && captchaVerified) {
       
       const { confirmPassword, ...dataToSend } = formData;
       const registerData = {
@@ -340,9 +346,10 @@ export default function Register() {
 
             {/* CAPTCHA */}
             <Captcha 
-              onChange={handleCaptchaChange}
+              onCaptchaChange={handleCaptchaChange}
+              onVerifiedChange={handleCaptchaVerified}
               error={formErrors.captcha}
-              loading={loading}
+              disabled={loading}
             />
 
             {/* Server Error */}
@@ -355,7 +362,7 @@ export default function Register() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading || Object.keys(formErrors).length > 0}
+              disabled={loading || Object.keys(formErrors).length > 0 || !captchaVerified}
               className="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white py-3 px-6 rounded-xl font-semibold
                        hover:from-green-700 hover:to-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200
                        disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] transition-all

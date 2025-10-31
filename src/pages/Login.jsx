@@ -15,6 +15,7 @@ export default function Login() {
   const [touched, setTouched] = useState({});
   const [captchaId, setCaptchaId] = useState('');
   const [captchaInput, setCaptchaInput] = useState('');
+  const [captchaVerified, setCaptchaVerified] = useState(false);
 
   const dispatch = useDispatch();
   const { user, loading, error } = useSelector(state => state.auth);
@@ -62,6 +63,10 @@ export default function Login() {
     setCaptchaInput(input);
   };
 
+  const handleCaptchaVerified = (isValid) => {
+    setCaptchaVerified(isValid);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -69,7 +74,7 @@ export default function Login() {
     setTouched({ email: true, password: true, captcha: true });
     
     // Verificar si hay errores
-    if (Object.keys(formErrors).length === 0 && formData.email && formData.password && captchaInput) {
+    if (Object.keys(formErrors).length === 0 && formData.email && formData.password && captchaInput && captchaVerified) {
       const loginData = {
         ...formData,
         captchaId,
@@ -167,6 +172,7 @@ export default function Login() {
             {/* CAPTCHA */}
             <Captcha
               onCaptchaChange={handleCaptchaChange}
+              onVerifiedChange={handleCaptchaVerified}
               error={formErrors.captcha}
               disabled={loading}
             />
@@ -181,7 +187,7 @@ export default function Login() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading || Object.keys(formErrors).length > 0}
+              disabled={loading || Object.keys(formErrors).length > 0 || !captchaVerified}
               className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-xl font-semibold
                        hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-200
                        disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] transition-all

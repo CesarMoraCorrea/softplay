@@ -1,0 +1,7 @@
+<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="300" height="200" fill="#3F51B5" />
+  <rect x="20" y="20" width="260" height="160" fill="#303F9F" stroke="#FFFFFF" stroke-width="2" />
+  <line x1="150" y1="20" x2="150" y2="180" stroke="#FFFFFF" stroke-width="2" />
+  <line x1="20" y1="100" x2="280" y2="100" stroke="#FFFFFF" stroke-width="2" />
+  <text x="150" y="15" font-family="Arial" font-size="12" fill="#FFFFFF" text-anchor="middle">Tenis Club Central</text>
+</svg>

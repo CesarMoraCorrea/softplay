@@ -1,0 +1,46 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo de la aplicación -->
+  <rect width="800" height="600" fill="#F8FAFC" rx="12" ry="12" />
+  
+  <!-- Barra superior -->
+  <rect x="0" y="0" width="800" height="60" fill="#4F46E5" rx="12" ry="12" />
+  <text x="30" y="38" font-family="Arial" font-size="24" fill="white" font-weight="bold">SoftPlay App</text>
+  
+  <!-- Contenido principal -->
+  <rect x="20" y="80" width="500" height="500" fill="white" rx="8" ry="8" stroke="#E2E8F0" stroke-width="1" />
+  
+  <!-- Lista de canchas -->
+  <rect x="40" y="100" width="460" height="100" fill="#F1F5F9" rx="6" ry="6" />
+  <rect x="60" y="120" width="80" height="60" fill="#4F46E5" rx="4" ry="4" />
+  <text x="160" y="140" font-family="Arial" font-size="16" fill="#1E293B" font-weight="bold">Cancha El Golazo</text>
+  <text x="160" y="165" font-family="Arial" font-size="14" fill="#64748B">Fútbol 5 • $1500/h</text>
+  
+  <rect x="40" y="220" width="460" height="100" fill="#F1F5F9" rx="6" ry="6" />
+  <rect x="60" y="240" width="80" height="60" fill="#4F46E5" rx="4" ry="4" />
+  <text x="160" y="260" font-family="Arial" font-size="16" fill="#1E293B" font-weight="bold">Complejo La Pelota</text>
+  <text x="160" y="285" font-family="Arial" font-size="14" fill="#64748B">Fútbol 7 • $2000/h</text>
+  
+  <rect x="40" y="340" width="460" height="100" fill="#F1F5F9" rx="6" ry="6" />
+  <rect x="60" y="360" width="80" height="60" fill="#4F46E5" rx="4" ry="4" />
+  <text x="160" y="380" font-family="Arial" font-size="16" fill="#1E293B" font-weight="bold">Estadio Pequeño</text>
+  <text x="160" y="405" font-family="Arial" font-size="14" fill="#64748B">Fútbol 11 • $3500/h</text>
+  
+  <!-- Panel lateral -->
+  <rect x="540" y="80" width="240" height="500" fill="white" rx="8" ry="8" stroke="#E2E8F0" stroke-width="1" />
+  <text x="560" y="120" font-family="Arial" font-size="18" fill="#1E293B" font-weight="bold">Filtros</text>
+  
+  <rect x="560" y="140" width="200" height="40" fill="#F8FAFC" rx="4" ry="4" stroke="#E2E8F0" stroke-width="1" />
+  <text x="580" y="165" font-family="Arial" font-size="14" fill="#64748B">Ubicación</text>
+  
+  <rect x="560" y="200" width="200" height="40" fill="#F8FAFC" rx="4" ry="4" stroke="#E2E8F0" stroke-width="1" />
+  <text x="580" y="225" font-family="Arial" font-size="14" fill="#64748B">Tipo de cancha</text>
+  
+  <rect x="560" y="260" width="200" height="40" fill="#F8FAFC" rx="4" ry="4" stroke="#E2E8F0" stroke-width="1" />
+  <text x="580" y="285" font-family="Arial" font-size="14" fill="#64748B">Fecha</text>
+  
+  <rect x="560" y="320" width="200" height="40" fill="#F8FAFC" rx="4" ry="4" stroke="#E2E8F0" stroke-width="1" />
+  <text x="580" y="345" font-family="Arial" font-size="14" fill="#64748B">Horario</text>
+  
+  <rect x="560" y="380" width="200" height="40" fill="#4F46E5" rx="4" ry="4" />
+  <text x="630" y="405" font-family="Arial" font-size="14" fill="white" font-weight="bold" text-anchor="middle">Aplicar filtros</text>
+</svg>

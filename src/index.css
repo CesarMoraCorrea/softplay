@@ -1,0 +1,404 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Tema claro (default) */
+    --color-primary: 59 130 246; /* blue-500 */
+    --color-primary-light: 96 165 250; /* blue-400 */
+    --color-primary-dark: 37 99 235; /* blue-600 */
+    --color-secondary: 139 92 246; /* purple-500 */
+    --color-secondary-light: 167 139 250; /* purple-400 */
+    --color-secondary-dark: 124 58 237; /* purple-600 */
+    --color-success: 34 197 94; /* green-500 */
+    --color-warning: 234 179 8; /* yellow-500 */
+    --color-error: 239 68 68; /* red-500 */
+    --color-info: 6 182 212; /* cyan-500 */
+  }
+
+  .dark {
+    /* Tema oscuro */
+    --color-primary: 96 165 250; /* blue-400 */
+    --color-primary-light: 147 197 253; /* blue-300 */
+    --color-primary-dark: 59 130 246; /* blue-500 */
+    --color-secondary: 167 139 250; /* purple-400 */
+    --color-secondary-light: 192 132 252; /* purple-300 */
+    --color-secondary-dark: 139 92 246; /* purple-500 */
+    --color-success: 74 222 128; /* green-400 */
+    --color-warning: 250 204 21; /* yellow-400 */
+    --color-error: 248 113 113; /* red-400 */
+    --color-info: 34 211 238; /* cyan-400 */
+  }
+
+  .sports {
+    /* Tema deportes */
+    --color-primary: 16 185 129; /* emerald-500 */
+    --color-primary-light: 52 211 153; /* emerald-400 */
+    --color-primary-dark: 5 150 105; /* emerald-600 */
+    --color-secondary: 245 158 11; /* amber-500 */
+    --color-secondary-light: 251 191 36; /* amber-400 */
+    --color-secondary-dark: 217 119 6; /* amber-600 */
+    --color-success: 34 197 94; /* green-500 */
+    --color-warning: 234 179 8; /* yellow-500 */
+    --color-error: 239 68 68; /* red-500 */
+    --color-info: 6 182 212; /* cyan-500 */
+  }
+}
+
+/* Estilos base */
+body { 
+  @apply text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-900; 
+}
+
+/* Componentes mejorados */
+.card { 
+  @apply bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 dark:bg-gray-800/95 dark:border-gray-700; 
+}
+
+.btn { 
+  @apply px-6 py-3 rounded-xl shadow-md font-semibold border transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2; 
+}
+
+.btn-primary { 
+  @apply bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg focus:ring-blue-500; 
+}
+
+.input { 
+  @apply border-2 rounded-xl px-4 py-3 w-full bg-white border-gray-200 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200 focus:shadow-lg focus:ring-2 focus:ring-blue-500/20 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:focus:border-blue-400; 
+}
+
+/* Animación para el dropdown del selector de temas */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* Transiciones suaves para cambios de tema */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Efecto glassmorphism para los cards */
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Hover effects mejorados */
+.hover-scale {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-scale:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Pulso sutil para el botón de cambio de tema */
+@keyframes pulse-theme {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+}
+
+.theme-button {
+  animation: pulse-theme 2s infinite;
+}
+
+/* Scroll personalizado para el dropdown */
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Utilidades adicionales para el sistema de temas */
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.backdrop-blur-strong {
+  backdrop-filter: blur(20px);
+}
+
+/* Animación sutil para elementos interactivos */
+@keyframes subtle-bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-2px);
+  }
+  60% {
+    transform: translateY(-1px);
+  }
+}
+
+.animate-subtle-bounce {
+  animation: subtle-bounce 1s ease-in-out;
+}
+
+/* Mejoras para formularios */
+.form-group {
+  @apply space-y-2;
+}
+
+.form-label {
+  @apply text-sm font-semibold text-gray-700 flex items-center gap-2;
+}
+
+.form-error {
+  @apply text-sm text-red-600 flex items-center gap-2;
+}
+
+.form-success {
+  @apply text-sm text-green-600 flex items-center gap-2;
+}
+
+/* Componentes de navegación mejorados */
+.nav-link {
+  @apply px-3 py-2 rounded-lg hover:bg-white/50 transition-all duration-200 font-medium text-gray-700 hover:text-gray-900 relative;
+}
+
+.nav-link.active::after {
+  content: '';
+  @apply absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1/2 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full;
+}
+
+/* Efectos de loading */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Gradientes personalizados */
+.gradient-text {
+  @apply bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent;
+}
+
+/* Estados de interacción mejorados */
+.interactive {
+  @apply transition-all duration-200 cursor-pointer;
+}
+
+.interactive:hover {
+  @apply transform scale-105;
+}
+
+.interactive:active {
+  @apply transform scale-95;
+}
+
+/* Sombras personalizadas */
+.shadow-elegant {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-intense {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Agregar a tu archivo CSS global */
+
+/* Animaciones personalizadas */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Clases de utilidad adicionales */
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.animate-pulse-slow {
+  animation: pulse 2s infinite;
+}
+
+/* Mejoras para inputs con focus */
+.input-focus-enhanced:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1), 0 10px 10px -5px rgba(59, 130, 246, 0.04);
+}
+
+/* Efectos de glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Hover effects mejorados */
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+/* Botones con efectos avanzados */
+.btn-gradient {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-gradient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.btn-gradient:hover::before {
+  left: 100%;
+}
+
+/* Filtros con mejor UX */
+.filter-chip {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.filter-chip:hover {
+  transform: scale(1.05);
+}
+
+.filter-chip.active {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* Loading states mejorados */
+.loading-shimmer {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Responsive mejoras */
+@media (max-width: 768px) {
+  .mobile-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .mobile-text-sm {
+    font-size: 0.875rem;
+  }
+}
+
+/* Estados de hover para móvil */
+@media (hover: hover) {
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Animaciones de entrada */
+.stagger-children > * {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.3s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.6s; }

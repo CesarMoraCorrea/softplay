@@ -1,4 +1,4 @@
-import axios from '../../api/axios';
+import axios from '../../../api/axios';
 
 export const authService = {
   // Registro de usuario

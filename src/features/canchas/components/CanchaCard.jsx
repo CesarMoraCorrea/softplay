@@ -52,7 +52,7 @@ const CanchaCard = ({
     >
       <div className="relative">
         {/* Imagen */}
-        <Link to={`/canchas/${_id}`}>
+        <Link to={`/reservar/${_id}`}>
           <img 
             src={imagenPrincipal} 
             alt={nombre} 
@@ -87,7 +87,7 @@ const CanchaCard = ({
       <Card.Body>
         {/* Título y calificación */}
         <div className="flex justify-between items-start mb-2">
-          <Link to={`/canchas/${_id}`}>
+          <Link to={`/reservar/${_id}`}>
             <Card.Title className="text-lg hover:text-primary transition-colors">
               {nombre}
             </Card.Title>

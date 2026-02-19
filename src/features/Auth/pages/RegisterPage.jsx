@@ -166,7 +166,7 @@ export default function RegisterPage() {
               <input
                 id="name"
                 type="text"
-                className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-xl focus:outline-none transition-colors ${
+                className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-xl focus:outline-none transition-colors text-gray-900 placeholder-gray-500 ${
                   formErrors.name 
                     ? 'border-red-300 focus:border-red-500 bg-red-50' 
                     : 'border-gray-200 focus:border-blue-500 focus:bg-white'
@@ -194,7 +194,7 @@ export default function RegisterPage() {
               <input
                 id="email"
                 type="email"
-                className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-xl focus:outline-none transition-colors ${
+                className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-xl focus:outline-none transition-colors text-gray-900 placeholder-gray-500 ${
                   formErrors.email 
                     ? 'border-red-300 focus:border-red-500 bg-red-50' 
                     : 'border-gray-200 focus:border-blue-500 focus:bg-white'
@@ -279,7 +279,7 @@ export default function RegisterPage() {
                 <input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  className={`w-full px-4 py-3 pr-12 bg-gray-50 border-2 rounded-xl focus:outline-none transition-colors ${
+                  className={`w-full px-4 py-3 pr-12 bg-gray-50 border-2 rounded-xl focus:outline-none transition-colors text-gray-900 placeholder-gray-500 ${
                     formErrors.confirmPassword 
                       ? 'border-red-300 focus:border-red-500 bg-red-50' 
                       : formData.confirmPassword && formData.password === formData.confirmPassword

@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/Login.jsx";
-import Register from "./pages/Register.jsx";
+import { LoginPage, RegisterPage } from "./features/Auth/index.js";
 import CanchasPage from "./pages/CanchasPage.jsx";
 import CanchaDetalle from "./pages/CanchaDetalle.jsx";
 import NuevaReserva from "./pages/NuevaReserva.jsx";
@@ -24,8 +23,8 @@ export default function App() {
     <ThemeProvider>
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
         {/* Rutas públicas sin layout */}
         <Route

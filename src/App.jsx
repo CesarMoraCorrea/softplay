@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { LoginPage, RegisterPage } from "./features/Auth/index.js";
 import CanchasPage from "./pages/CanchasPage.jsx";
-import CanchaDetalle from "./pages/CanchaDetalle.jsx";
 import NuevaReserva from "./pages/NuevaReserva.jsx";
 import MisReservas from "./pages/MisReservas.jsx";
 import ReservaDetalle from "./pages/ReservaDetalle.jsx";
@@ -35,15 +34,6 @@ export default function App() {
             </DashboardLayout>
           }
         />
-        <Route
-          path="/canchas/:id"
-          element={
-            <DashboardLayout>
-              <CanchaDetalle />
-            </DashboardLayout>
-          }
-        />
-
         {/* Rutas protegidas con DashboardLayout */}
         <Route
           path="/dashboard"

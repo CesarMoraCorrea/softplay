@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
-import { Search, Filter, MapPin, Star, X, ArrowLeft, Map, List } from "lucide-react";
+import { Search, Filter, MapPin, Star, X, Map, List, Building2 } from "lucide-react";
 import CanchaCard from "../features/canchas/components/CanchaCard";
 import FiltrosCanchas from "../features/canchas/components/FiltrosCanchas";
 import Input from "../components/common/Input";
@@ -9,6 +8,7 @@ import Button from "../components/common/Button";
 import EmptyState from "../components/common/EmptyState";
 import Modal from "../components/common/Modal";
 import Alert from "../components/common/Alert";
+import Card from "../components/common/Card";
 import GeolocationSearch from "../components/GeolocationSearch";
 import GoogleMapsView from "../components/GoogleMapsView";
 
@@ -17,13 +17,14 @@ import { fetchCanchas } from "../redux/slices/canchasSlice";
 
 const CanchasPage = () => {
   const dispatch = useDispatch();
-  const { list: canchas, loading } = useSelector((state) => state.canchas);
+  const { list: sedes, loading } = useSelector((state) => state.canchas);
 
   // Estado local para errores
   const [error, setError] = useState(null);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [vistaActual, setVistaActual] = useState("mapa"); // 'lista' o 'mapa' - por defecto mapa
+  const [selectedSedeId, setSelectedSedeId] = useState(null);
   const [filtros, setFiltros] = useState({
     ubicacion: "",
     precioMin: 0,
@@ -40,11 +41,18 @@ const CanchasPage = () => {
   // Cargar canchas desde el backend al montar el componente
   useEffect(() => {
     try {
-      dispatch(fetchCanchas(busqueda));
+      const query = busqueda ? `q=${encodeURIComponent(busqueda)}` : "";
+      dispatch(fetchCanchas(query));
     } catch (err) {
-      setError(err.message || "Error al cargar las canchas");
+      setError(err.message || "Error al cargar las sedes");
     }
   }, [dispatch, busqueda]);
+
+  useEffect(() => {
+    if (!selectedSedeId) return;
+    const exists = sedes.some((sede) => sede._id === selectedSedeId);
+    if (!exists) setSelectedSedeId(null);
+  }, [sedes, selectedSedeId]);
 
   const handleBusquedaChange = (e) => {
     setBusqueda(e.target.value);
@@ -113,18 +121,45 @@ const CanchasPage = () => {
     console.log("Toggle favorito para cancha:", canchaId);
   };
 
-  // Ya no necesitamos filtrar localmente, el backend se encarga de eso
-  const canchasFiltradas = canchas;
+  const selectedSede = sedes.find((sede) => sede._id === selectedSedeId) || null;
+  const escenariosSeleccionados = (selectedSede?.escenarios || []).map((escenario) => ({
+    _id: escenario._id,
+    escenarioId: escenario._id,
+    sedeId: selectedSede._id,
+    nombre: escenario.nombre,
+    direccion: selectedSede?.ubicacion?.direccion,
+    precioHora: escenario.precioPorHora,
+    tipoCancha: escenario.tipoDeporte,
+    servicios: selectedSede?.servicios || [],
+    ubicacion: {
+      lat: selectedSede?.ubicacion?.lat,
+      lng: selectedSede?.ubicacion?.lng,
+    },
+  }));
+
+  const mapItems = selectedSede
+    ? escenariosSeleccionados
+    : sedes.map((sede) => ({
+        _id: sede._id,
+        nombre: sede.nombre,
+        direccion: sede?.ubicacion?.direccion,
+        ubicacion: {
+          lat: sede?.ubicacion?.lat,
+          lng: sede?.ubicacion?.lng,
+        },
+      }));
 
   return (
     <div className="p-6">
       {/* Encabezado y búsqueda */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Encuentra tu cancha perfecta
+          Encuentra tu sede y escenario
         </h1>
         <p className="text-gray-600 dark:text-gray-300">
-          Más de {canchas.length} canchas disponibles cerca de ti
+          {selectedSede
+            ? `${escenariosSeleccionados.length} escenarios disponibles en ${selectedSede.nombre}`
+            : `${sedes.length} sedes disponibles cerca de ti`}
         </p>
 
         <div className="max-w-2xl mx-auto mt-4 flex flex-col gap-2">
@@ -231,9 +266,21 @@ const CanchasPage = () => {
 
       {/* Mensaje de error */}
       {error && (
-        <Alert variant="error" title="Error al cargar canchas" onClose={() => setError(null)}>
+        <Alert variant="error" title="Error al cargar sedes" onClose={() => setError(null)}>
           {error}
         </Alert>
+      )}
+
+      {selectedSede && (
+        <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800 mb-4">
+          <div>
+            <p className="text-sm text-blue-700 dark:text-blue-300">Sede seleccionada</p>
+            <p className="font-semibold text-blue-900 dark:text-blue-100">{selectedSede.nombre}</p>
+          </div>
+          <Button variant="outline" onClick={() => setSelectedSedeId(null)}>
+            Ver todas las sedes
+          </Button>
+        </div>
       )}
 
       {/* Resultados */}
@@ -243,29 +290,58 @@ const CanchasPage = () => {
             <div key={index} className="bg-gray-200 dark:bg-gray-700 rounded-lg h-80"></div>
           ))}
         </div>
-      ) : canchasFiltradas.length > 0 ? (
+      ) : sedes.length > 0 ? (
         vistaActual === "mapa" ? (
-          <GoogleMapsView userLocation={filtros.coordenadas} canchas={canchasFiltradas} />
+          <GoogleMapsView userLocation={filtros.coordenadas} canchas={mapItems} />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {canchasFiltradas.map((cancha) => (
-              <CanchaCard
-                key={cancha._id}
-                cancha={{
-                  ...cancha,
-                  precio: cancha.precioHora, // Mapear precioHora a precio para compatibilidad
-                  horariosDisponibles: cancha.horarios || [], // Asegurar que siempre haya un array de horarios
-                }}
-                isFavorite={false} // En una implementación real, esto vendría del estado
-                onToggleFavorite={() => toggleFavorito(cancha._id)}
-              />
-            ))}
-          </div>
+          !selectedSede ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sedes.map((sede) => (
+                <Card key={sede._id} variant="glass" className="p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{sede.nombre}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        {sede?.ubicacion?.direccion || "Dirección no disponible"}
+                      </p>
+                    </div>
+                    <Building2 className="w-6 h-6 text-primary" />
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
+                    <span>{(sede.escenarios || []).length} escenarios</span>
+                    <span>{sede?.ubicacion?.barrio || "Sin barrio"}</span>
+                  </div>
+
+                  <div className="mt-4">
+                    <Button className="w-full" onClick={() => setSelectedSedeId(sede._id)}>
+                      Ver escenarios
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {escenariosSeleccionados.map((cancha) => (
+                <CanchaCard
+                  key={cancha._id}
+                  cancha={{
+                    ...cancha,
+                    precio: cancha.precioHora,
+                    horariosDisponibles: cancha.horarios || [],
+                  }}
+                  isFavorite={false}
+                  onToggleFavorite={() => toggleFavorito(cancha._id)}
+                />
+              ))}
+            </div>
+          )
         )
       ) : (
         <EmptyState
           icon={<MapPin className="w-8 h-8 text-gray-400 dark:text-gray-300" />}
-          title="No se encontraron canchas"
+          title="No se encontraron sedes"
           description="Prueba ajustar los filtros o la búsqueda para encontrar mejores resultados."
         >
           <Button variant="primary" onClick={limpiarFiltros}>

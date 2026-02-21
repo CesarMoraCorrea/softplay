@@ -4,22 +4,22 @@ import api from "../../api/axios.js";
 // Acepta un query string (e.g. "q=x&lat=...&lng=..."),
 // asegurando que todos los filtros se envíen correctamente al backend
 export const fetchCanchas = createAsyncThunk("canchas/list", async (query = "") => {
-  const url = query ? `/canchas?${query}` : "/canchas";
+  const url = query ? `/sedes?${query}` : "/sedes";
   const { data } = await api.get(url);
   return data;
 });
 export const createCancha = createAsyncThunk("canchas/create", async (payload) => {
-  const { data } = await api.post("/canchas", payload);
+  const { data } = await api.post("/sedes", payload);
   return data;
 });
 
 export const updateCancha = createAsyncThunk("canchas/update", async ({ id, data: payload }) => {
-  const { data } = await api.put(`/canchas/${id}`, payload);
+  const { data } = await api.put(`/sedes/${id}`, payload);
   return data;
 });
 
 export const deleteCancha = createAsyncThunk("canchas/delete", async (id) => {
-  await api.delete(`/canchas/${id}`);
+  await api.delete(`/sedes/${id}`);
   return id;
 });
 export const uploadFiles = async (files) => {
@@ -38,11 +38,11 @@ const slice = createSlice({
      .addCase(fetchCanchas.fulfilled, (s,{payload})=>{ s.loading=false; s.list=payload; })
      .addCase(fetchCanchas.rejected, s=>{s.loading=false;})
      .addCase(updateCancha.fulfilled, (s,{payload})=>{
-       const index = s.list.findIndex(c => c._id === payload._id);
+       const index = s.list.findIndex(c => c._id === payload._id || c.sedeId === payload._id);
        if (index !== -1) s.list[index] = payload;
      })
      .addCase(deleteCancha.fulfilled, (s,{payload})=>{
-       s.list = s.list.filter(c => c._id !== payload);
+       s.list = s.list.filter(c => c._id !== payload && c.sedeId !== payload);
      });
   }
 });

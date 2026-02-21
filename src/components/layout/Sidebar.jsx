@@ -58,7 +58,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       submenu: [
         {
           key: "admin-canchas",
-          label: "Gestión de Canchas",
+          label: "Gestión de Sedes y Escenarios",
           icon: MdSportsSoccer,
           path: "/admin/canchas",
         },

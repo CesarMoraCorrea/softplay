@@ -74,7 +74,7 @@ export default function Sidebar() {
                 className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-700 text-slate-200"
               >
                 <LayoutGrid className="w-5 h-5" />
-                <span>Admin Canchas</span>
+                <span>Gestión de Sedes</span>
               </Link>
             )}
           </nav>

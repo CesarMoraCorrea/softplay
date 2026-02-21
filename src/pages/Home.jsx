@@ -144,7 +144,7 @@ export default function Home() {
         params.set("lng", String(userPos.lng));
       }
 
-      const res = await fetch(`/api/canchas?${params.toString()}`);
+      const res = await fetch(`/api/sedes?${params.toString()}`);
       if (!res.ok) throw new Error("Error al cargar canchas");
       const data = await res.json();
       setFields(data);

@@ -44,7 +44,7 @@ export default function NuevaReserva() {
     const fetchCancha = async () => {
       try {
         setLoading(true);
-        const { data } = await api.get(`/canchas/${id}`);
+        const { data } = await api.get(`/sedes/escenarios/${id}`);
         setCancha(data);
       } catch (err) {
         setError("Error al cargar la información de la cancha");
@@ -75,7 +75,8 @@ export default function NuevaReserva() {
     try {
       const { payload } = await dispatch(
         crearReservaThunk({
-          canchaId: id,
+          sedeId: cancha?.sedeId,
+          escenarioId: cancha?.escenarioId || id,
           fecha,
           horas: Number(horas),
         })
@@ -101,6 +102,7 @@ export default function NuevaReserva() {
     // Actualizar el estado de la reserva
     setReserva((prev) => ({
       ...prev,
+      estadoPago: "pagado",
       estado: "pagada",
       transactionId: paymentData.id,
     }));

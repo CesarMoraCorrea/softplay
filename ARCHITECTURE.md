@@ -1,95 +1,132 @@
-# Arquitectura del Frontend
+# 🏗️ Arquitectura del Frontend - SoftPlay
 
-## Estructura de Directorios
+## Estructura General
 
 ```
-src/
-├── assets/               # Recursos estáticos (imágenes, fuentes, etc.)
-├── components/           # Componentes reutilizables
-│   ├── common/           # Componentes básicos (Button, Input, Card, etc.)
-│   ├── forms/            # Componentes de formularios
-│   ├── layout/           # Componentes de estructura (Header, Footer, Sidebar)
-│   ├── modals/           # Componentes de modales y diálogos
-│   └── ui/               # Componentes de interfaz específicos
-├── config/               # Configuraciones globales
-├── contexts/             # Contextos de React
-├── features/             # Módulos de características específicas
-│   ├── auth/             # Autenticación (login, registro, recuperación)
-│   ├── canchas/          # Gestión de canchas
-│   ├── profile/          # Perfil de usuario
-│   └── reservas/         # Gestión de reservas
-├── hooks/                # Hooks personalizados
-├── layouts/              # Layouts de la aplicación
-├── lib/                  # Utilidades y funciones auxiliares
-├── pages/                # Páginas de la aplicación
-├── services/             # Servicios de API
-├── styles/               # Estilos globales
-├── theme/                # Configuración de temas
-└── utils/                # Utilidades generales
+frontend/
+├── src/
+│   ├── features/                  # Features basadas en módulos
+│   │   ├── Auth/
+│   │   │   ├── pages/
+│   │   │   │   ├── LoginPage.jsx
+│   │   │   │   └── RegisterPage.jsx
+│   │   │   ├── views/
+│   │   │   │   ├── LoginView.jsx
+│   │   │   │   └── RegisterView.jsx
+│   │   │   ├── services/
+│   │   │   │   └── authService.js
+│   │   │   ├── index.js
+│   │   │   └── README.md
+│   │   └── canchas/
+│   │       ├── services/
+│   │       │   └── canchasService.js
+│   │       ├── index.js
+│   │       └── README.md
+│   ├── pages/                     # Páginas públicas
+│   ├── components/                # Componentes reutilizables
+│   ├── layouts/                   # Layouts
+│   ├── redux/                     # Estado global
+│   │   ├── store.js
+│   │   ├── slices/
+│   │   └── ...
+│   ├── api/
+│   │   └── axios.js              # Instancia configurada
+│   ├── contexts/                  # Context API
+│   ├── App.jsx
+│   └── main.jsx
+├── package.json
+└── vite.config.js
 ```
 
-## Módulos Principales
+## Patrón Feature-Based Architecture
 
-### Autenticación (auth)
-- Login
-- Registro
-- Recuperación de contraseña
-- Gestión de sesiones
+### Estructura de un Feature
 
-### Canchas
-- Listado de canchas
-- Detalle de cancha
-- Búsqueda y filtrado
+Cada feature tiene:
+- **pages/**: Componentes contenedores (smart components)
+- **views/**: Componentes presentacionales (dumb components)
+- **services/**: Lógica de negocio y llamadas HTTP
+- **index.js**: Exporta los componentes principales
+- **README.md**: Documentación del feature
 
-### Reservas
-- Creación de reservas
-- Gestión de reservas
-- Historial de reservas
+### Ejemplo: Auth Feature
 
-### Perfil de Usuario
-- Visualización de datos
-- Edición de perfil
-- Preferencias
+```javascript
+// pages/LoginPage.jsx - Smart Component
+// Maneja lógica, estado, efectos, validación
+import { authService } from '../services/authService';
 
-### Administración
-- Gestión de canchas
-- Gestión de usuarios
-- Configuración del sistema
+export default function LoginPage() {
+  // Lógica aquí
+  return <LoginView {...props} />;
+}
 
-## Tecnologías y Patrones
+// views/LoginView.jsx - Dumb Component
+// Solo recibe props y renderiza
+export default function LoginView({ email, password, onSubmit }) {
+  return <form onSubmit={onSubmit}>...</form>;
+}
 
-### Frontend
-- React con Vite
-- Redux Toolkit para gestión de estado
-- React Router para navegación
-- Tailwind CSS para estilos
-- Framer Motion para animaciones
+// services/authService.js - Servicio
+export const authService = {
+  login: async (credentials) => {...},
+  register: async (userData) => {...},
+  getMe: async () => {...}
+};
+```
 
-### Patrones de Diseño
-- Arquitectura basada en características (Feature-based)
-- Componentes atómicos
-- Container/Presentational pattern
-- Custom hooks para lógica reutilizable
+## Features Disponibles
 
-### Temas
-- Sistema de temas claro/oscuro
-- Personalización de colores
-- Accesibilidad
+### 1. **Auth** ✨ Refactorizado
+- Autenticación JWT
+- Registro de usuarios
+- Gestión de tokens
+- Servicio centralizado: `authService`
+- Métodos:
+  - `login(credentials)` - Iniciar sesión
+  - `register(userData)` - Registrarse
+  - `getMe()` - Obtener usuario actual
+  - `saveToken(token)` - Guardar JWT
+  - `getToken()` - Obtener JWT
+  - `clearAuth()` - Limpiar sesión
 
-## Flujo de Datos
+### 2. **Canchas** ✨ Refactorizado
+- CRUD de canchas
+- Búsqueda y filtros
+- Geolocalización
+- Carga de imágenes
+- Servicio centralizado: `canchasService`
+- Métodos:
+  - `getAll(filters)` - Listar con filtros
+  - `getById(id)` - Obtener detalle
+  - `create(data)` - Crear cancha (admin)
+  - `update(id, data)` - Actualizar (admin)
+  - `delete(id)` - Eliminar (admin)
+  - `uploadImage(formData)` - Cargar imagen
+  - `searchByLocation(lat, lng, radius)` - Geobúsqueda
 
-1. **Servicios API**: Comunicación con el backend
-2. **Redux Store**: Gestión de estado global
-3. **Contextos**: Estado compartido entre componentes relacionados
-4. **Props**: Paso de datos entre componentes
+## Stack Tecnológico
 
-## Estrategia de Implementación
+- **Framework**: React 18.2 + Vite 5.3
+- **State Management**: Redux Toolkit 2.8
+- **Routing**: React Router 6.30
+- **HTTP Client**: Axios con interceptores
+- **Styling**: Tailwind CSS
+- **Animaciones**: Framer Motion
+- **API Calls**: Axios con servicio abstraction
 
-1. Configurar estructura base y dependencias
-2. Implementar sistema de temas y componentes base
-3. Desarrollar módulo de autenticación
-4. Implementar layouts principales
-5. Desarrollar módulos de características específicas
-6. Integrar animaciones y feedback visual
-7. Optimizar rendimiento y accesibilidad
-8. Pruebas y ajustes finales
+## Ventajas de Feature-Based Architecture
+
+✅ **Escalabilidad**: Fácil agregar nuevos features
+✅ **Mantenibilidad**: Todo relacionado en un lugar
+✅ **Reutilización**: Services compartibles
+✅ **Testing**: Componentes aislados
+✅ **Colaboración**: Equipos pueden trabajar en paralelo
+
+## Cambios en esta Versión
+
+- ✨ Refactorización a Feature-Based Architecture
+- 📁 Separación clara de concerns (pages/views/services)
+- 🚀 Mejor escalabilidad y mantenibilidad
+- 📚 Documentación completa de cada feature
+- 🔄 Container/Presentational pattern consolidado

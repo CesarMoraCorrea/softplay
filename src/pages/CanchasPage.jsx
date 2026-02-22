@@ -23,8 +23,9 @@ const CanchasPage = () => {
   const [error, setError] = useState(null);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   const [busqueda, setBusqueda] = useState("");
-  const [vistaActual, setVistaActual] = useState("mapa"); // 'lista' o 'mapa' - por defecto mapa
+  const [vistaActual, setVistaActual] = useState("lista"); // 'Lista' o 'Mapa' - por defecto Lista
   const [selectedSedeId, setSelectedSedeId] = useState(null);
+  const [selectedSede, setSelectedSede] = useState(null); // Para guardar la sede seleccionada
   const [filtros, setFiltros] = useState({
     ubicacion: "",
     precioMin: 0,
@@ -38,24 +39,42 @@ const CanchasPage = () => {
     coordenadas: null, // Para almacenar lat/lng de la ubicación actual
   });
 
-  // Cargar canchas desde el backend al montar el componente
+  // Cargar canchas desde el backend al montar el componente y cada vez que cambie la búsqueda
+  // Solo cuando NO hay una sede seleccionada
   useEffect(() => {
     try {
-      const query = busqueda ? `q=${encodeURIComponent(busqueda)}` : "";
-      dispatch(fetchCanchas(query));
+      let query = "";
+      
+      if (selectedSedeId) {
+        // Si hay sede seleccionada, enviar parámetros para filtrar escenarios del backend
+        const params = new URLSearchParams();
+        params.set("view", "escenarios");
+        params.set("sedeId", selectedSedeId);
+        if (busqueda) params.set("q", busqueda);
+        query = params.toString();
+        dispatch(fetchCanchas(query));
+      } else if (!selectedSedeId) {
+        // Si no hay sede, buscar sedes por término general
+        query = busqueda ? `q=${encodeURIComponent(busqueda)}` : "";
+        dispatch(fetchCanchas(query));
+      }
     } catch (err) {
       setError(err.message || "Error al cargar las sedes");
     }
-  }, [dispatch, busqueda]);
+  }, [dispatch, busqueda, selectedSedeId]);
 
   useEffect(() => {
-    if (!selectedSedeId) return;
-    const exists = sedes.some((sede) => sede._id === selectedSedeId);
-    if (!exists) setSelectedSedeId(null);
-  }, [sedes, selectedSedeId]);
+    if (!selectedSedeId || !selectedSede) return;
+    // Solo validar si no estamos mostrando escenarios
+    // (cuando mostramos escenarios, 'sedes' contiene escenarios, no sedes)
+    if (selectedSede && selectedSede._id === selectedSedeId) return;
+    
+    setSelectedSedeId(null);
+    setSelectedSede(null);
+  }, [selectedSedeId, selectedSede]);
 
   const handleBusquedaChange = (e) => {
-    setBusqueda(e.target.value);
+    setBusqueda(e.target.value); // Captura el texto que escribe el usuario
   };
 
   const handleFiltrosChange = (nuevosFiltros) => {
@@ -121,25 +140,13 @@ const CanchasPage = () => {
     console.log("Toggle favorito para cancha:", canchaId);
   };
 
-  const selectedSede = sedes.find((sede) => sede._id === selectedSedeId) || null;
-  const escenariosSeleccionados = (selectedSede?.escenarios || []).map((escenario) => ({
-    _id: escenario._id,
-    escenarioId: escenario._id,
-    sedeId: selectedSede._id,
-    nombre: escenario.nombre,
-    direccion: selectedSede?.ubicacion?.direccion,
-    precioHora: escenario.precioPorHora,
-    tipoCancha: escenario.tipoDeporte,
-    servicios: selectedSede?.servicios || [],
-    ubicacion: {
-      lat: selectedSede?.ubicacion?.lat,
-      lng: selectedSede?.ubicacion?.lng,
-    },
-  }));
+  // Cuando hay sede seleccionada, `sedes` contiene los escenarios filtrados del backend
+  const escenariosSeleccionados = selectedSedeId ? sedes : [];
 
-  const mapItems = selectedSede
-    ? escenariosSeleccionados
-    : sedes.map((sede) => ({
+  // En vista mapa: siempre muestra sedes (deselecciona automáticamente)
+  // En vista lista: muestra escenarios si hay sede seleccionada, sino sedes
+  const mapItems = !selectedSede
+    ? sedes.map((sede) => ({
         _id: sede._id,
         nombre: sede.nombre,
         direccion: sede?.ubicacion?.direccion,
@@ -147,25 +154,26 @@ const CanchasPage = () => {
           lat: sede?.ubicacion?.lat,
           lng: sede?.ubicacion?.lng,
         },
-      }));
+      }))
+    : escenariosSeleccionados;
 
   return (
     <div className="p-6">
       {/* Encabezado y búsqueda */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Encuentra tu sede y escenario
+          {selectedSede ? selectedSede.nombre : "Encuentra tu sede y escenario"}
         </h1>
         <p className="text-gray-600 dark:text-gray-300">
           {selectedSede
-            ? `${escenariosSeleccionados.length} escenarios disponibles en ${selectedSede.nombre}`
+            ? `${escenariosSeleccionados.length} escenarios disponibles`
             : `${sedes.length} sedes disponibles cerca de ti`}
         </p>
 
         <div className="max-w-2xl mx-auto mt-4 flex flex-col gap-2">
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <Input
-              placeholder="Buscar por nombre o ubicación..."
+              placeholder={selectedSede ? "Buscar escenarios..." : "Buscar por nombre o ubicación..."}
               value={busqueda}
               onChange={handleBusquedaChange}
               icon={<Search className="w-5 h-5 text-gray-400" />}
@@ -182,7 +190,15 @@ const CanchasPage = () => {
             {/* Toggle para cambiar entre vista lista y mapa */}
             <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               <button
-                onClick={() => setVistaActual("mapa")}
+                onClick={() => {
+                  setVistaActual("mapa");
+                  // Deseleccionar sede al cambiar a mapa para mostrar todas las sedes
+                  if (selectedSedeId) {
+                    setSelectedSedeId(null);
+                    setSelectedSede(null);
+                    setBusqueda("");
+                  }
+                }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   vistaActual === "mapa"
                     ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
@@ -204,6 +220,20 @@ const CanchasPage = () => {
                 Lista
               </button>
             </div>
+
+            {selectedSede && (
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedSedeId(null);
+                  setSelectedSede(null);
+                }}
+                className="ml-2 text-sm"
+              >
+                Volver
+              </Button>
+            )}
           </div>
 
           {/* Componente de geolocalización */}
@@ -271,18 +301,6 @@ const CanchasPage = () => {
         </Alert>
       )}
 
-      {selectedSede && (
-        <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800 mb-4">
-          <div>
-            <p className="text-sm text-blue-700 dark:text-blue-300">Sede seleccionada</p>
-            <p className="font-semibold text-blue-900 dark:text-blue-100">{selectedSede.nombre}</p>
-          </div>
-          <Button variant="outline" onClick={() => setSelectedSedeId(null)}>
-            Ver todas las sedes
-          </Button>
-        </div>
-      )}
-
       {/* Resultados */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
@@ -314,7 +332,11 @@ const CanchasPage = () => {
                   </div>
 
                   <div className="mt-4">
-                    <Button className="w-full" onClick={() => setSelectedSedeId(sede._id)}>
+                    <Button className="w-full" onClick={() => {
+                      setSelectedSedeId(sede._id);
+                      setSelectedSede(sede); // Guardar la sede seleccionada
+                      setBusqueda(""); // Limpiar búsqueda al seleccionar una sede
+                    }}>
                       Ver escenarios
                     </Button>
                   </div>
@@ -323,18 +345,26 @@ const CanchasPage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {escenariosSeleccionados.map((cancha) => (
-                <CanchaCard
-                  key={cancha._id}
-                  cancha={{
-                    ...cancha,
-                    precio: cancha.precioHora,
-                    horariosDisponibles: cancha.horarios || [],
-                  }}
-                  isFavorite={false}
-                  onToggleFavorite={() => toggleFavorito(cancha._id)}
-                />
-              ))}
+              {escenariosSeleccionados.length > 0 ? (
+                escenariosSeleccionados.map((cancha) => (
+                  <CanchaCard
+                    key={cancha._id}
+                    cancha={cancha}
+                    isFavorite={false}
+                    onToggleFavorite={() => toggleFavorito(cancha._id)}
+                  />
+                ))
+              ) : (
+                <EmptyState
+                  icon={<MapPin className="w-8 h-8 text-gray-400 dark:text-gray-300" />}
+                  title="No se encontraron escenarios"
+                  description="Prueba con otra búsqueda."
+                >
+                  <Button variant="primary" onClick={() => setBusqueda("")}>
+                    Limpiar búsqueda
+                  </Button>
+                </EmptyState>
+              )}
             </div>
           )
         )

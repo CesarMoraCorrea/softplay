@@ -44,7 +44,14 @@ export default function NuevaReserva() {
     const fetchCancha = async () => {
       try {
         setLoading(true);
-        const { data } = await api.get(`/sedes/escenarios/${id}`);
+        if (!id || id === "undefined" || id === "null" || id === "[object Object]") {
+          setError("Escenario inválido. Vuelve a seleccionar el escenario.");
+          setCancha(null);
+          setLoading(false);
+          return;
+        }
+
+        const { data } = await api.get(`/sedes/escenarios/${encodeURIComponent(id)}`);
         setCancha(data);
       } catch (err) {
         setError("Error al cargar la información de la cancha");

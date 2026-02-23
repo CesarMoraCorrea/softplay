@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
   Calendar,
@@ -22,11 +22,14 @@ import { imageUrl } from "../utils/imageUrl.js";
 export default function NuevaReserva() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
 
+  const initialCanchaFromState = location?.state?.cancha || null;
+
   // Estados para la cancha y formulario
-  const [cancha, setCancha] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [cancha, setCancha] = useState(initialCanchaFromState);
+  const [loading, setLoading] = useState(!initialCanchaFromState);
   const [error, setError] = useState("");
 
   // Estados del formulario de reserva
@@ -40,14 +43,66 @@ export default function NuevaReserva() {
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("");
 
+  const normalizeId = (value) => {
+    if (!value) return "";
+    if (typeof value === "string") return value.trim();
+    if (typeof value === "object") {
+      if (typeof value.$oid === "string") return value.$oid.trim();
+      if (typeof value.toString === "function") {
+        const parsed = value.toString();
+        return parsed && parsed !== "[object Object]" ? parsed.trim() : "";
+      }
+    }
+    return "";
+  };
+
   useEffect(() => {
     const fetchCancha = async () => {
       try {
         setLoading(true);
-        const { data } = await api.get(`/sedes/escenarios/${id}`);
-        setCancha(data);
+        const safeId = normalizeId(id);
+
+        const stateCancha = location?.state?.cancha || null;
+        const stateCanchaId = normalizeId(stateCancha?.escenarioId) || normalizeId(stateCancha?._id);
+        if (stateCancha && stateCanchaId && stateCanchaId === safeId) {
+          setCancha(stateCancha);
+          setError("");
+          setLoading(false);
+          return;
+        }
+
+        if (!safeId || safeId === "undefined" || safeId === "null" || safeId === "[object Object]") {
+          setError("Escenario inválido. Vuelve a seleccionar el escenario.");
+          setCancha(null);
+          setLoading(false);
+          return;
+        }
+
+        try {
+          const { data } = await api.get(`/sedes/escenarios/${encodeURIComponent(safeId)}`);
+          setCancha(data);
+          setError("");
+          return;
+        } catch (primaryError) {
+          const { data: escenarios } = await api.get(`/sedes?view=escenarios`);
+          const escenario = Array.isArray(escenarios)
+            ? escenarios.find((item) => {
+                const currentId = normalizeId(item?.escenarioId) || normalizeId(item?._id);
+                return currentId === safeId;
+              })
+            : null;
+
+          if (escenario) {
+            setCancha(escenario);
+            setError("");
+            return;
+          }
+
+          throw primaryError;
+        }
       } catch (err) {
-        setError("Error al cargar la información de la cancha");
+        const backendMessage = err?.response?.data?.message;
+        setError(backendMessage || "Error al cargar la información de la cancha");
         console.error(err);
       } finally {
         setLoading(false);
@@ -57,7 +112,7 @@ export default function NuevaReserva() {
     if (id) {
       fetchCancha();
     }
-  }, [id]);
+  }, [id, location?.state]);
 
   const calcularTotal = () => {
     return (cancha?.precioHora || 0) * Number(horas);
@@ -75,8 +130,8 @@ export default function NuevaReserva() {
     try {
       const { payload } = await dispatch(
         crearReservaThunk({
-          sedeId: cancha?.sedeId,
-          escenarioId: cancha?.escenarioId || id,
+          escenarioId: cancha?.escenarioId || cancha?._id || id,
+          canchaId: cancha?.escenarioId || cancha?._id || id,
           fecha,
           horas: Number(horas),
         })

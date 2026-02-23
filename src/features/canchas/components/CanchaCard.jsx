@@ -43,7 +43,12 @@ const CanchaCard = ({
     horariosDisponibles = [],
   } = cancha;
 
-  const reservaId = parseEntityId(escenarioId) || parseEntityId(_id) || parseEntityId(id);
+  const isEscenarioData = Boolean(
+    escenarioId || cancha?.sedeId || tipoCancha || precioHora != null || cancha?.superficie
+  );
+
+  const reservaId = parseEntityId(escenarioId)
+    || (isEscenarioData ? (parseEntityId(_id) || parseEntityId(id)) : null);
   
   // Usar precioHora o precio, dependiendo de cuál esté disponible
   const precioMostrar = precioHora || precio || 0;
@@ -71,7 +76,10 @@ const CanchaCard = ({
     >
       <div className="relative">
         {/* Imagen */}
-        <Link to={reservaId ? `/reservar/${reservaId}` : "/canchas"}>
+        <Link
+          to={reservaId ? `/reservar/${reservaId}` : "/canchas"}
+          state={reservaId ? { cancha } : undefined}
+        >
           <img 
             src={imagenPrincipal} 
             alt={nombre} 
@@ -106,7 +114,10 @@ const CanchaCard = ({
       <Card.Body>
         {/* Título y calificación */}
         <div className="flex justify-between items-start mb-2">
-          <Link to={reservaId ? `/reservar/${reservaId}` : "/canchas"}>
+          <Link
+            to={reservaId ? `/reservar/${reservaId}` : "/canchas"}
+            state={reservaId ? { cancha } : undefined}
+          >
             <Card.Title className="text-lg hover:text-primary transition-colors">
               {nombre}
             </Card.Title>
@@ -176,6 +187,7 @@ const CanchaCard = ({
         {/* Botón de reserva */}
         <Link 
           to={reservaId ? `/reservar/${reservaId}` : "/canchas"}
+          state={reservaId ? { cancha } : undefined}
           className="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
         >
           Reservar

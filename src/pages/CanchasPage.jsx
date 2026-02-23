@@ -348,7 +348,7 @@ const CanchasPage = () => {
               {escenariosSeleccionados.length > 0 ? (
                 escenariosSeleccionados.map((cancha) => (
                   <CanchaCard
-                    key={cancha._id}
+                    key={cancha.escenarioId || cancha._id}
                     cancha={cancha}
                     isFavorite={false}
                     onToggleFavorite={() => toggleFavorito(cancha._id)}

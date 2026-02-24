@@ -188,7 +188,7 @@ const CanchaCard = ({
         <Link 
           to={reservaId ? `/reservar/${reservaId}` : "/canchas"}
           state={reservaId ? { cancha } : undefined}
-          className="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+          className="px-3 py-1.5 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors text-sm font-medium"
         >
           Reservar
         </Link>

@@ -187,9 +187,9 @@ export default function DateTimeSelector({ value, onChange }) {
                     <button
                       key={idx}
                       onClick={() => handleDatePreset(preset.date)}
-                      className={`px-2 md:px-3 py-2 rounded-lg font-medium text-xs md:text-sm transition-all duration-200 ${
+                      className={`px-2 md:px-3 py-2 rounded-lg font-medium text-xs md:text-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
                         isSelectedDate(preset.date)
-                          ? "bg-primary text-white shadow-lg"
+                          ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg"
                           : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                       }`}
                     >
@@ -211,7 +211,7 @@ export default function DateTimeSelector({ value, onChange }) {
                         )
                       )
                     }
-                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                   >
                     <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
@@ -232,7 +232,7 @@ export default function DateTimeSelector({ value, onChange }) {
                         )
                       )
                     }
-                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                   >
                     <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
@@ -262,13 +262,13 @@ export default function DateTimeSelector({ value, onChange }) {
                         key={idx}
                         onClick={() => !isDisabled && handleCalendarDayClick(day.date)}
                         disabled={isDisabled}
-                        className={`aspect-square rounded text-xs md:text-sm font-medium transition-all duration-200 flex items-center justify-center relative ${
+                        className={`aspect-square rounded text-xs md:text-sm font-medium transition-all duration-200 flex items-center justify-center relative focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
                           isDisabled
                             ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
                             : isSelectedDay
-                            ? "bg-primary text-white shadow-lg font-bold"
+                            ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg font-bold"
                             : isTodayDate
-                            ? "bg-blue-100 dark:bg-blue-900/30 border-2 border-primary text-primary font-bold"
+                            ? "bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 font-bold"
                             : day.isCurrentMonth
                             ? "bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
                             : "text-gray-400 dark:text-gray-600 bg-gray-50 dark:bg-gray-700/50"
@@ -327,7 +327,7 @@ export default function DateTimeSelector({ value, onChange }) {
                       onClick={() => handleTimeSelect(slot.hour)}
                       className={`px-2 md:px-3 py-2 rounded-lg font-medium text-xs md:text-sm transition-all duration-200 ${
                         selectedDate.getHours() === slot.hour
-                          ? "bg-primary text-white shadow-lg scale-105"
+                          ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg scale-105"
                           : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                       }`}
                     >
@@ -354,7 +354,7 @@ export default function DateTimeSelector({ value, onChange }) {
                     setShowCalendar(false);
                     setStep("date");
                   }}
-                  className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-opacity-90 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg font-medium text-sm hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors flex items-center justify-center gap-2"
                 >
                   <Check className="w-4 h-4" />
                   Confirmar

@@ -36,7 +36,7 @@ function StepIndicator({ step, totalSteps = 3 }) {
           <div
             className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold transition-all duration-300 ${
               step >= s.number
-                ? "bg-primary text-white shadow-lg"
+                ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg"
                 : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
             }`}
           >
@@ -45,7 +45,7 @@ function StepIndicator({ step, totalSteps = 3 }) {
           <p
             className={`ml-2 text-sm font-medium transition-colors duration-300 ${
               step >= s.number
-                ? "text-primary dark:text-primary"
+                ? "text-blue-600 dark:text-blue-400"
                 : "text-gray-600 dark:text-gray-400"
             }`}
           >
@@ -54,7 +54,7 @@ function StepIndicator({ step, totalSteps = 3 }) {
           {idx < steps.length - 1 && (
             <div
               className={`flex-1 h-1 mx-4 rounded transition-all duration-300 ${
-                step > s.number ? "bg-primary" : "bg-gray-300 dark:bg-gray-700"
+                step > s.number ? "bg-blue-600 dark:bg-blue-700" : "bg-gray-300 dark:bg-gray-700"
               }`}
             />
           )}
@@ -580,7 +580,7 @@ export default function NuevaReserva() {
                           onClick={() => handleDuracionChange(h)}
                           className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                             horas === h
-                              ? "bg-primary text-white shadow-lg scale-105"
+                              ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg scale-105"
                               : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                           }`}
                         >

@@ -4,11 +4,14 @@ import { Link } from "react-router-dom";
 import { 
   FiCalendar, 
   FiClock, 
+  FiDollarSign, 
   FiArrowLeft, 
   FiTag, 
   FiAlertCircle, 
+  FiCreditCard, 
   FiX,
   FiMapPin,
+  FiCheck,
   FiRefreshCw
 } from "react-icons/fi";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
@@ -45,6 +48,11 @@ export default function MisReservas(){
     } finally {
       setCanceling(false);
     }
+  };
+
+  // Verificar si una reserva puede ser cancelada
+  const canCancelReserva = (reserva) => {
+    return reserva.estado === 'pendiente';
   };
 
   // Función para obtener el color del estado
@@ -183,6 +191,15 @@ export default function MisReservas(){
                 <div className="flex justify-end gap-2 pt-2">
                   {reserva.estado === 'pendiente' && (
                     <>
+                      <Link to={`/reservas/${reserva._id}`}>
+                        <Button 
+                          size="sm" 
+                          className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium px-3 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2"
+                        >
+                          <FiCreditCard className="w-4 h-4" />
+                          Pagar
+                        </Button>
+                      </Link>
                       <Button 
                         size="sm" 
                         onClick={() => handleCancelReserva(reserva)}

@@ -12,25 +12,8 @@ const CanchaCard = ({
   onToggleFavorite,
   className = '',
 }) => {
-  const parseEntityId = (value) => {
-    if (!value) return null;
-    if (typeof value === "string") {
-      return value === "[object Object]" ? null : value;
-    }
-    if (typeof value === "object") {
-      if (typeof value.$oid === "string") return value.$oid;
-      if (typeof value.toString === "function") {
-        const result = value.toString();
-        return result && result !== "[object Object]" ? result : null;
-      }
-    }
-    return null;
-  };
-
   const {
     _id,
-    escenarioId,
-    id,
     nombre,
     direccion,
     precioHora,
@@ -42,13 +25,6 @@ const CanchaCard = ({
     servicios = [],
     horariosDisponibles = [],
   } = cancha;
-
-  const isEscenarioData = Boolean(
-    escenarioId || cancha?.sedeId || tipoCancha || precioHora != null || cancha?.superficie
-  );
-
-  const reservaId = parseEntityId(escenarioId)
-    || (isEscenarioData ? (parseEntityId(_id) || parseEntityId(id)) : null);
   
   // Usar precioHora o precio, dependiendo de cuál esté disponible
   const precioMostrar = precioHora || precio || 0;
@@ -76,10 +52,7 @@ const CanchaCard = ({
     >
       <div className="relative">
         {/* Imagen */}
-        <Link
-          to={reservaId ? `/reservar/${reservaId}` : "/canchas"}
-          state={reservaId ? { cancha } : undefined}
-        >
+        <Link to={`/reservar/${_id}`}>
           <img 
             src={imagenPrincipal} 
             alt={nombre} 
@@ -114,10 +87,7 @@ const CanchaCard = ({
       <Card.Body>
         {/* Título y calificación */}
         <div className="flex justify-between items-start mb-2">
-          <Link
-            to={reservaId ? `/reservar/${reservaId}` : "/canchas"}
-            state={reservaId ? { cancha } : undefined}
-          >
+          <Link to={`/reservar/${_id}`}>
             <Card.Title className="text-lg hover:text-primary transition-colors">
               {nombre}
             </Card.Title>
@@ -186,8 +156,7 @@ const CanchaCard = ({
         
         {/* Botón de reserva */}
         <Link 
-          to={reservaId ? `/reservar/${reservaId}` : "/canchas"}
-          state={reservaId ? { cancha } : undefined}
+          to={`/reservar/${_id}`}
           className="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
         >
           Reservar
@@ -199,9 +168,7 @@ const CanchaCard = ({
 
 CanchaCard.propTypes = {
   cancha: PropTypes.shape({
-    _id: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-    escenarioId: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+    _id: PropTypes.string.isRequired,
     nombre: PropTypes.string.isRequired,
     direccion: PropTypes.string,
     precioHora: PropTypes.number.isRequired,

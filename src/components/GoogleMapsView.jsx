@@ -30,28 +30,6 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, userLocation = null }) {
     return Number(value);
   };
 
-  const parseEntityId = (value) => {
-    if (!value) return null;
-    if (typeof value === "string") return value !== "[object Object]" ? value : null;
-    if (typeof value === "object") {
-      if (typeof value.$oid === "string") return value.$oid;
-      if (typeof value.toString === "function") {
-        const result = value.toString();
-        return result && result !== "[object Object]" ? result : null;
-      }
-    }
-    return null;
-  };
-
-  const getReservaId = (cancha) => {
-    const escenarioId = parseEntityId(cancha?.escenarioId);
-    if (escenarioId) return escenarioId;
-
-    const fallbackId = parseEntityId(cancha?._id) || parseEntityId(cancha?.id);
-    const looksLikeEscenario = Boolean(cancha?.tipoCancha) || cancha?.precioHora != null;
-    return looksLikeEscenario ? fallbackId : null;
-  };
-
   // Intentar obtener ubicación al inicio si no viene por props
   useEffect(() => {
     if (userLocation && userLocation.lat != null && userLocation.lng != null) return;
@@ -205,10 +183,9 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, userLocation = null }) {
 
   // Manejar click en marcador
   const handleMarkerClick = (cancha) => {
-    const reservaId = getReservaId(cancha);
-    // Redirigir directamente a la página de reserva solo si es un escenario reservable
-    if (reservaId) {
-      navigate(`/reservar/${reservaId}`);
+    // Redirigir directamente a la página de reserva de la cancha
+    if (cancha && cancha._id) {
+      navigate(`/reservar/${cancha._id}`);
       return;
     }
     // Fallback: mantener comportamiento anterior
@@ -311,9 +288,8 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, userLocation = null }) {
           content: canchaPin.element,
         });
         marker.addListener("click", () => {
-          const reservaId = getReservaId(cancha);
-          if (reservaId) {
-            navigate(`/reservar/${reservaId}`);
+          if (cancha && cancha._id) {
+            navigate(`/reservar/${cancha._id}`);
             return;
           }
           setSelectedCancha(cancha);
@@ -326,9 +302,8 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, userLocation = null }) {
           title: cancha?.nombre || "Cancha",
         });
         marker.addListener("click", () => {
-          const reservaId = getReservaId(cancha);
-          if (reservaId) {
-            navigate(`/reservar/${reservaId}`);
+          if (cancha && cancha._id) {
+            navigate(`/reservar/${cancha._id}`);
             return;
           }
           setSelectedCancha(cancha);
@@ -419,14 +394,10 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, userLocation = null }) {
 
                         <button
                           onClick={() => {
-                            const reservaId = getReservaId(cancha);
                             if (onCanchaSelect) onCanchaSelect(cancha);
-                            if (reservaId) {
-                              window.open(`/reservar/${reservaId}`, "_blank");
-                            }
+                            window.open(`/reservar/${cancha._id}`, "_blank");
                           }}
-                          className="w-full text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={!getReservaId(cancha)}
+                          className="w-full text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition-colors"
                         >
                           Reservar
                         </button>
@@ -523,14 +494,10 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, userLocation = null }) {
               </div>
               <button
                 onClick={() => {
-                  const reservaId = getReservaId(selectedCancha);
                   if (onCanchaSelect) onCanchaSelect(selectedCancha);
-                  if (reservaId) {
-                    window.open(`/reservar/${reservaId}`, "_blank");
-                  }
+                  window.open(`/reservar/${selectedCancha._id}`, "_blank");
                 }}
-                className="w-full text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!getReservaId(selectedCancha)}
+                className="w-full text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition-colors"
               >
                 Reservar
               </button>

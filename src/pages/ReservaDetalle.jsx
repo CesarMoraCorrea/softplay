@@ -9,7 +9,9 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import DashboardLayout from "../layouts/DashboardLayout";
 import Button from "../components/common/Button";
+import PaymentComponent from "../components/PaymentComponent";
 import api from "../api/axios.js";
 
 export default function ReservaDetalle() {
@@ -33,6 +35,17 @@ export default function ReservaDetalle() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePaymentSuccess = (paymentData) => {
+    // Actualizar el estado de la reserva después del pago exitoso
+    setReserva((prev) => ({
+      ...prev,
+      estado: "pagada",
+      paymentStatus: "succeeded",
+      transactionId: paymentData.id,
+      paymentDate: new Date(),
+    }));
   };
 
   // Formatear fecha
@@ -183,17 +196,38 @@ export default function ReservaDetalle() {
               </div>
             )}
 
+            {/* Componente de pago para reservas pendientes */}
             {reserva.estado === "pendiente" && (
               <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                <PaymentComponent reserva={reserva} onPaymentSuccess={handlePaymentSuccess} />
+              </div>
+            )}
+
+            {/* Información de pago para reservas pagadas */}
+            {reserva.estado === "pagada" && reserva.transactionId && (
+              <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                    <h4 className="font-medium text-yellow-800 dark:text-yellow-300">
-                      Reserva Pendiente
+                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    <h4 className="font-medium text-green-800 dark:text-green-300">
+                      Pago Confirmado
                     </h4>
                   </div>
-                  <div className="space-y-1 text-sm text-yellow-700 dark:text-yellow-400">
-                    <p>El módulo de pagos quedará para una implementación posterior.</p>
+                  <div className="space-y-1 text-sm text-green-700 dark:text-green-400">
+                    <p>
+                      <strong>ID de Transacción:</strong> {reserva.transactionId}
+                    </p>
+                    {reserva.paymentMethod && (
+                      <p>
+                        <strong>Método de Pago:</strong> {reserva.paymentMethod}
+                      </p>
+                    )}
+                    {reserva.paymentDate && (
+                      <p>
+                        <strong>Fecha de Pago:</strong>{" "}
+                        {new Date(reserva.paymentDate).toLocaleDateString("es-ES")}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

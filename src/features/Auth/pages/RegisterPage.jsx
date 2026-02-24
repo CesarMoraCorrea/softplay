@@ -143,7 +143,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="text-center mb-8">
@@ -155,7 +155,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Field */}
             <div className="space-y-2">
@@ -166,10 +166,10 @@ export default function RegisterPage() {
               <input
                 id="name"
                 type="text"
-                className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-xl focus:outline-none transition-colors text-gray-900 placeholder-gray-500 ${
+                className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 rounded-xl focus:outline-none transition-colors text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${
                   formErrors.name 
-                    ? 'border-red-300 focus:border-red-500 bg-red-50' 
-                    : 'border-gray-200 focus:border-blue-500 focus:bg-white'
+                    ? 'border-red-300 dark:border-red-600 focus:border-red-500 bg-red-50 dark:bg-red-900/20' 
+                    : 'border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-700'
                 }`}
                 placeholder="Juan Pérez"
                 value={formData.name}
@@ -194,10 +194,10 @@ export default function RegisterPage() {
               <input
                 id="email"
                 type="email"
-                className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-xl focus:outline-none transition-colors text-gray-900 placeholder-gray-500 ${
+                className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 rounded-xl focus:outline-none transition-colors text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${
                   formErrors.email 
-                    ? 'border-red-300 focus:border-red-500 bg-red-50' 
-                    : 'border-gray-200 focus:border-blue-500 focus:bg-white'
+                    ? 'border-red-300 dark:border-red-600 focus:border-red-500 bg-red-50 dark:bg-red-900/20' 
+                    : 'border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-700'
                 }`}
                 placeholder="tu@email.com"
                 value={formData.email}
@@ -223,10 +223,10 @@ export default function RegisterPage() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  className={`w-full px-4 py-3 pr-12 bg-gray-50 border-2 rounded-xl focus:outline-none transition-colors ${
+                  className={`w-full px-4 py-3 pr-12 bg-gray-50 dark:bg-gray-700 border-2 rounded-xl focus:outline-none transition-colors text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${
                     formErrors.password 
-                      ? 'border-red-300 focus:border-red-500 bg-red-50' 
-                      : 'border-gray-200 focus:border-blue-500 focus:bg-white'
+                      ? 'border-red-300 dark:border-red-600 focus:border-red-500 bg-red-50 dark:bg-red-900/20' 
+                      : 'border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-700'
                   }`}
                   placeholder="••••••••"
                   value={formData.password}
@@ -279,12 +279,12 @@ export default function RegisterPage() {
                 <input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  className={`w-full px-4 py-3 pr-12 bg-gray-50 border-2 rounded-xl focus:outline-none transition-colors text-gray-900 placeholder-gray-500 ${
+                  className={`w-full px-4 py-3 pr-12 bg-gray-50 dark:bg-gray-700 border-2 rounded-xl focus:outline-none transition-colors text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${
                     formErrors.confirmPassword 
-                      ? 'border-red-300 focus:border-red-500 bg-red-50' 
+                      ? 'border-red-300 dark:border-red-600 focus:border-red-500 bg-red-50 dark:bg-red-900/20' 
                       : formData.confirmPassword && formData.password === formData.confirmPassword
-                        ? 'border-green-300 focus:border-green-500 bg-green-50'
-                        : 'border-gray-200 focus:border-blue-500 focus:bg-white'
+                        ? 'border-green-300 dark:border-green-600 focus:border-green-500 bg-green-50 dark:bg-green-900/20'
+                        : 'border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-700'
                   }`}
                   placeholder="••••••••"
                   value={formData.confirmPassword}
@@ -331,7 +331,7 @@ export default function RegisterPage() {
                       value={role.value}
                       checked={formData.role === role.value}
                       onChange={(e) => handleInputChange('role', e.target.value)}
-                      className="mt-1 text-blue-600 focus:ring-blue-500"
+                      className="mt-1 w-4 h-4 accent-blue-500 focus:ring-blue-500"
                       disabled={loading}
                     />
                     <div>

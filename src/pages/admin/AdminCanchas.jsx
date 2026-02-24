@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Building2, Edit, Layers3, MapPin, Plus, Trash2 } from "lucide-react";
@@ -61,6 +61,7 @@ const buildSedePayload = (base, escenarios = []) => {
 export default function AdminCanchas() {
   const dispatch = useDispatch();
   const { list: sedes, loading } = useSelector((state) => state.canchas);
+  const escenariosSectionRef = useRef(null);
 
   const [sedeForm, setSedeForm] = useState(initialSedeForm);
   const [escenarioForm, setEscenarioForm] = useState(initialEscenarioForm);
@@ -145,6 +146,10 @@ export default function AdminCanchas() {
   const handleSelectSede = (sedeId) => {
     setSelectedSedeId(sedeId);
     resetEscenarioForm();
+    // Scroll suave a la sección de escenarios
+    setTimeout(() => {
+      escenariosSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
   };
 
   const handleSubmitEscenario = async () => {
@@ -271,10 +276,10 @@ export default function AdminCanchas() {
                       key={servicio}
                       type="button"
                       onClick={() => toggleServicio(servicio)}
-                      className={`px-3 py-1.5 rounded-full text-sm border ${
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-all ${
                         sedeForm.servicios.includes(servicio)
-                          ? "bg-primary text-white border-primary"
-                          : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                          ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600 shadow-md"
+                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-gray-600"
                       }`}
                     >
                       {servicio}
@@ -286,7 +291,7 @@ export default function AdminCanchas() {
               <div className="flex gap-3">
                 <button
                   onClick={handleSubmitSede}
-                  className="flex-1 bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-lg"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all shadow-md hover:shadow-lg"
                 >
                   {editingSedeId ? "Actualizar Sede" : "Crear Sede"}
                 </button>
@@ -363,7 +368,7 @@ export default function AdminCanchas() {
           </section>
         </div>
 
-        <section className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+        <section ref={escenariosSectionRef} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Gestión de Escenarios</h2>
             <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -424,6 +429,7 @@ export default function AdminCanchas() {
                     type="checkbox"
                     checked={escenarioForm.activo}
                     onChange={(e) => setEscenarioForm((prev) => ({ ...prev, activo: e.target.checked }))}
+                    className="w-4 h-4 accent-blue-500"
                   />
                   Escenario activo
                 </label>
@@ -431,7 +437,7 @@ export default function AdminCanchas() {
                 <div className="flex gap-3">
                   <button
                     onClick={handleSubmitEscenario}
-                    className="flex-1 bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-lg inline-flex items-center justify-center gap-2"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg inline-flex items-center justify-center gap-2 transition-all"
                   >
                     <Plus className="w-4 h-4" />
                     {editingEscenarioId ? "Actualizar Escenario" : "Crear Escenario"}

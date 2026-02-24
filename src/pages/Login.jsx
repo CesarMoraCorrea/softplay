@@ -87,7 +87,7 @@ export default function Login() {
   if (user) return <Navigate to="/home" />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -99,7 +99,7 @@ export default function Login() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div className="space-y-2">
@@ -111,10 +111,10 @@ export default function Login() {
                 <input
                   id="email"
                   type="email"
-                  className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-xl focus:outline-none transition-colors ${
+                  className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 rounded-xl focus:outline-none transition-colors ${
                     formErrors.email 
-                      ? 'border-red-300 focus:border-red-500 bg-red-50' 
-                      : 'border-gray-200 focus:border-blue-500 focus:bg-white'
+                      ? 'border-red-300 dark:border-red-600 focus:border-red-500 bg-red-50 dark:bg-red-900/20' 
+                      : 'border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-700'
                   }`}
                   placeholder="tu@email.com"
                   value={formData.email}
@@ -141,10 +141,10 @@ export default function Login() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  className={`w-full px-4 py-3 pr-12 bg-gray-50 border-2 rounded-xl focus:outline-none transition-colors ${
+                  className={`w-full px-4 py-3 pr-12 bg-gray-50 dark:bg-gray-700 border-2 rounded-xl focus:outline-none transition-colors ${
                     formErrors.password 
-                      ? 'border-red-300 focus:border-red-500 bg-red-50' 
-                      : 'border-gray-200 focus:border-blue-500 focus:bg-white'
+                      ? 'border-red-300 dark:border-red-600 focus:border-red-500 bg-red-50 dark:bg-red-900/20' 
+                      : 'border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-700'
                   }`}
                   placeholder="••••••••"
                   value={formData.password}

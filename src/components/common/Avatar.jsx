@@ -11,7 +11,7 @@ const Avatar = ({
   ...props
 }) => {
   // Definir clases base
-  const baseClasses = 'relative inline-block rounded-full overflow-hidden bg-gray-200';
+  const baseClasses = 'relative inline-block rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700';
   
   // Tamaños
   const sizeClasses = {
@@ -83,7 +83,7 @@ const Avatar = ({
       ) : null}
       
       <div 
-        className={`w-full h-full flex items-center justify-center text-gray-700 font-medium ${src ? 'hidden' : 'flex'}`}
+        className={`w-full h-full flex items-center justify-center text-gray-700 dark:text-gray-300 font-medium ${src ? 'hidden' : 'flex'}`}
         style={{
           fontSize: size === 'xs' || size === 'sm' ? '0.7rem' : 
                    size === 'md' ? '0.8rem' : 

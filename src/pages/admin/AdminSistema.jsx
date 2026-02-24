@@ -261,7 +261,7 @@ export default function AdminSistema() {
                       name="role"
                       value={newUser.role}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white accent-blue-500"
                     >
                       <option value="usuario">Usuario</option>
                       <option value="propietario">Propietario</option>
@@ -327,7 +327,7 @@ export default function AdminSistema() {
                       name="role"
                       value={editUser.role}
                       onChange={handleEditInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white accent-blue-500"
                     >
                       <option value="usuario">Usuario</option>
                       <option value="propietario">Propietario</option>
@@ -627,7 +627,7 @@ export default function AdminSistema() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Moneda
                   </label>
-                  <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white">
+                  <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white accent-blue-500">
                     <option>COP - Peso Colombiano</option>
                     <option>USD - Dólar Estadounidense</option>
                   </select>

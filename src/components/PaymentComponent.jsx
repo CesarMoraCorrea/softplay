@@ -225,9 +225,7 @@ export default function PaymentComponent({ reserva, onPaymentSuccess }) {
     }
   };
 
-  const estadoReserva = reserva.estado || (reserva.estadoPago === "pagado" ? "pagada" : "pendiente");
-
-  if (estadoReserva !== "pendiente") {
+  if (reserva.estado !== "pendiente") {
     return null;
   }
 

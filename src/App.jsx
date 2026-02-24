@@ -59,9 +59,7 @@ export default function App() {
           path="/reservar/:id"
           element={
             <ProtectedRoute>
-              <DashboardLayout>
                 <NuevaReserva />
-              </DashboardLayout>
             </ProtectedRoute>
           }
         />

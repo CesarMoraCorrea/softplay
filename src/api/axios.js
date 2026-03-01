@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const baseURL = "/api";
+// Si existe la variable en Vercel (VITE_API_URL), la usa. 
+// Si no (en local), usa ruta relativa /api para aprovechar el proxy de Vite.
+const baseURL = import.meta.env.VITE_API_URL || "/api";
 
 const api = axios.create({
   baseURL: baseURL,

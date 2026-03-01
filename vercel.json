@@ -1,7 +1,3 @@
 {
-  "version": 2,
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://softplay-backend.vercel.app/api/$1" },
-    { "source": "/uploads/(.*)", "destination": "https://softplay-backend.vercel.app/uploads/$1" }
-  ]
+  "version": 2
 }

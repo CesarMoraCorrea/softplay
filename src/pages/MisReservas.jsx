@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { 
-  FiCalendar, 
-  FiClock, 
-  FiArrowLeft, 
-  FiTag, 
-  FiAlertCircle, 
+import {
+  FiCalendar,
+  FiClock,
+  FiArrowLeft,
+  FiTag,
+  FiAlertCircle,
   FiX,
   FiMapPin,
   FiRefreshCw
@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card"
 import Button from "../components/ui/Button";
 import { misReservasThunk, cancelarReservaThunk } from "../redux/slices/reservasSlice.js";
 
-export default function MisReservas(){
+export default function MisReservas() {
   const dispatch = useDispatch();
   const { list, loading } = useSelector(s => s.reservas);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -33,7 +33,7 @@ export default function MisReservas(){
   // Confirmar cancelación
   const confirmCancelReserva = async () => {
     if (!reservaToCancel) return;
-    
+
     try {
       setCanceling(true);
       await dispatch(cancelarReservaThunk(reservaToCancel._id)).unwrap();
@@ -49,7 +49,7 @@ export default function MisReservas(){
 
   // Función para obtener el color del estado
   const getStatusColor = (estado) => {
-    switch(estado.toLowerCase()) {
+    switch (estado.toLowerCase()) {
       case 'pendiente': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
       case 'pagada': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
       case 'confirmada': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
@@ -59,16 +59,15 @@ export default function MisReservas(){
     }
   };
 
-  // Formatear fecha
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
+    // Para evitar desfases, usamos UTC Date si viene de MongoDB con formato ISO a 00:00Z, pero asumiéndolo normal el toLocaleDateString suele acertar localmente. Ajuste simple:
+    date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+    return date.toLocaleDateString('es-AR', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     });
   };
 
@@ -102,103 +101,92 @@ export default function MisReservas(){
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
         </div>
       ) : list.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {list.map(reserva => (
-            <Card key={reserva._id} className="hover:shadow-lg transition-all duration-300 group">
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      {reserva.cancha?.nombre}
-                    </CardTitle>
-                    <div className="flex items-center gap-1 mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      <FiMapPin className="w-3 h-3" />
-                      <span>
-                        {reserva.cancha?.ubicacion 
-                          ? (typeof reserva.cancha.ubicacion === 'string' 
-                              ? reserva.cancha.ubicacion 
-                              : `${reserva.cancha.ubicacion.lat || ''}, ${reserva.cancha.ubicacion.lng || ''}`)
-                          : 'Ubicación no disponible'
-                        }
-                      </span>
-                    </div>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(reserva.estado)}`}>
-                    {reserva.estado === 'confirmada' ? 'Confirmada' : 
-                     reserva.estado === 'pendiente' ? 'Pendiente' : 
-                     reserva.estado === 'pagada' ? 'Pagada' :
-                     reserva.estado === 'completada' ? 'Completada' :
-                     'Cancelada'}
-                  </span>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                {/* Información de la reserva */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-3">
-                  <div className="flex items-center text-gray-700 dark:text-gray-300">
-                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
-                      <FiCalendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">
-                        {formatDate(reserva.fecha)}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center text-gray-700 dark:text-gray-300">
-                    <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-3">
-                      <FiClock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">
-                        Duración: {reserva.horas} {reserva.horas === 1 ? 'hora' : 'horas'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {reserva.cancha?.tipoCancha && (
-                    <div className="flex items-center text-gray-700 dark:text-gray-300">
-                      <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center mr-3">
-                        <FiTag className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">
-                          {reserva.cancha.tipoCancha}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Precio total:</span>
-                    <span className="text-xl font-bold text-green-600 dark:text-green-400">
-                      ${reserva.total.toLocaleString('es-AR')}
+            <div key={reserva._id} className="relative bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-600 hover:shadow-xl dark:hover:shadow-gray-900/50 hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
+              {/* Borde superior de color por estado */}
+              <div className={`absolute top-0 left-0 w-full h-1 ${reserva.estado === 'confirmada' ? 'bg-green-500' :
+                reserva.estado === 'pendiente' ? 'bg-yellow-400' :
+                  reserva.estado === 'pagada' ? 'bg-green-500' :
+                    reserva.estado === 'completada' ? 'bg-blue-500' :
+                      'bg-red-500'
+                }`} />
+
+              <div className="flex justify-between items-start mb-4">
+                <div className="pr-2">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-1 group-hover:text-primary transition-colors">
+                    {reserva.cancha?.nombre}
+                  </h3>
+                  <div className="flex items-center gap-1 mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    <FiMapPin className="w-3 h-3 flex-shrink-0" />
+                    <span className="truncate max-w-[150px]">
+                      {reserva.cancha?.ubicacion
+                        ? (typeof reserva.cancha.ubicacion === 'string'
+                          ? reserva.cancha.ubicacion
+                          : "Ubicación GPS")
+                        : 'Sede'
+                      }
                     </span>
                   </div>
                 </div>
-                  
-                {/* Acciones */}
-                <div className="flex justify-end gap-2 pt-2">
-                  {reserva.estado === 'pendiente' && (
-                    <>
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleCancelReserva(reserva)}
-                        className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium px-3 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2"
-                      >
-                        <FiX className="w-4 h-4" />
-                        Cancelar
-                      </Button>
-                    </>
-                  )}
-                  <Link to={`/reservas/${reserva._id}`}>
-                    <Button size="sm" variant="outline">Ver detalles</Button>
-                  </Link>
+                <span className={`flex-shrink-0 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${getStatusColor(reserva.estado)}`}>
+                  {reserva.estado}
+                </span>
+              </div>
+
+              <div className="space-y-3 mb-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <FiCalendar className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">
+                      {formatDate(reserva.fecha)}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {reserva.horaInicio} a {reserva.horaFin} ({reserva.horas}h)
+                    </p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+
+                {reserva.cancha?.tipoCancha && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-900/40 text-orange-500 dark:text-orange-300 flex items-center justify-center flex-shrink-0">
+                      <FiTag className="w-4 h-4" />
+                    </div>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      {reserva.cancha.tipoCancha}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Tira punteada estilo "boleto" */}
+              <div className="relative flex items-center justify-between py-4 border-t-2 border-dashed border-gray-200 dark:border-gray-700 my-2 mt-auto">
+                <div className="absolute -left-8 w-4 h-4 rounded-full bg-gray-50 dark:bg-gray-900" />
+                <div className="absolute -right-8 w-4 h-4 rounded-full bg-gray-50 dark:bg-gray-900" />
+
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Total a Pagar</span>
+                <span className="text-lg font-black text-gray-900 dark:text-white">
+                  ${reserva.total.toLocaleString('es-AR')}
+                </span>
+              </div>
+
+              {/* Acciones */}
+              <div className="flex justify-between items-center gap-2 pt-2">
+                {reserva.estado === 'pendiente' ? (
+                  <button
+                    onClick={() => handleCancelReserva(reserva)}
+                    className="text-xs font-semibold text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors px-2 py-1"
+                  >
+                    Cancelar
+                  </button>
+                ) : <div />}
+                <Link to={`/reservas/${reserva._id}`} className="flex-1">
+                  <Button size="sm" className="w-full text-xs py-2 shadow-none hover:shadow-md transition-all">Ver Detalle</Button>
+                </Link>
+              </div>
+            </div>
           ))}
         </div>
       ) : (
@@ -217,7 +205,7 @@ export default function MisReservas(){
           </div>
         </Card>
       )}
-        
+
       {/* Modal de confirmación para cancelar reserva */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -226,50 +214,51 @@ export default function MisReservas(){
               <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <FiX className="w-8 h-8 text-red-600 dark:text-red-400" />
               </div>
-                <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">
-                  Confirmar Cancelación
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  ¿Estás seguro de que deseas cancelar esta reserva?
-                </p>
-                
-                {reservaToCancel && (
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
-                    <h4 className="font-medium text-gray-800 dark:text-white mb-2">
-                      {reservaToCancel.cancha?.nombre}
-                    </h4>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                      <p><strong>Fecha:</strong> {formatDate(reservaToCancel.fecha)}</p>
-                      <p><strong>Duración:</strong> {reservaToCancel.horas} {reservaToCancel.horas === 1 ? 'hora' : 'horas'}</p>
-                      <p><strong>Total:</strong> ${reservaToCancel.total.toLocaleString('es-AR')}</p>
-                    </div>
+              <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">
+                Confirmar Cancelación
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                ¿Estás seguro de que deseas cancelar esta reserva?
+              </p>
+
+              {reservaToCancel && (
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-gray-800 dark:text-white mb-2">
+                    {reservaToCancel.cancha?.nombre}
+                  </h4>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                    <p className="capitalize"><strong>Fecha:</strong> {formatDate(reservaToCancel.fecha)}</p>
+                    <p><strong>Horario:</strong> {reservaToCancel.horaInicio} a {reservaToCancel.horaFin}</p>
+                    <p><strong>Duración:</strong> {reservaToCancel.horas} {reservaToCancel.horas === 1 ? 'hora' : 'horas'}</p>
+                    <p><strong>Total:</strong> ${reservaToCancel.total.toLocaleString('es-AR')}</p>
                   </div>
-                )}
-                
-                <p className="text-sm text-red-600 dark:text-red-400">
-                  Esta acción no se puede deshacer.
-                </p>
-              </div>
-              
-              <div className="flex gap-3">
-                <Button 
-                  onClick={() => setShowCancelModal(false)}
-                  disabled={canceling}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 font-medium py-3 rounded-lg transition-all duration-200"
-                >
-                  No, mantener
-                </Button>
-                <Button 
-                  onClick={confirmCancelReserva}
-                  disabled={canceling}
-                  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-                >
-                  {canceling ? 'Cancelando...' : 'Sí, cancelar'}
-                </Button>
-              </div>
+                </div>
+              )}
+
+              <p className="text-sm text-red-600 dark:text-red-400">
+                Esta acción no se puede deshacer.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setShowCancelModal(false)}
+                disabled={canceling}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 font-medium py-3 rounded-lg transition-all duration-200"
+              >
+                No, mantener
+              </Button>
+              <Button
+                onClick={confirmCancelReserva}
+                disabled={canceling}
+                className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                {canceling ? 'Cancelando...' : 'Sí, cancelar'}
+              </Button>
             </div>
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 }

@@ -113,6 +113,54 @@ function ImageGallery({ imagenes, nombre }) {
 
 // El componente Modal de Confirmación ha sido eliminado para usar un flujo lineal por Pasos
 
+// Helper Auxiliar para parsear hora (Ej: "06:30" -> 6.5)
+const timeStringToFloat = (timeStr) => {
+  if (!timeStr) return null;
+  const [h, m] = timeStr.split(":").map(Number);
+  return h + (m / 60);
+};
+
+// Helper para re-formatear Float de vuelta a string (Ej: 6.5 -> "06:30")
+const floatToTimeString = (floatHour) => {
+  const h = Math.floor(floatHour);
+  const m = Math.round((floatHour - h) * 60);
+  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+};
+
+// Generador Dinámico de Bloques de Tiempo en base a la configuración
+const generarSlotsHorario = (cancha, fechaString) => {
+  if (!fechaString || !fechaString.includes("T")) return [];
+  const dateObj = new Date(fechaString.split("T")[0] + "T00:00:00");
+  const dayOfWeek = dateObj.getDay();
+
+  let configGlobal = cancha?.configuracionHorarioSede || {};
+  if (cancha?.usarHorarioPersonalizado && cancha?.configuracionHorario) {
+    configGlobal = cancha.configuracionHorario;
+  }
+
+  const dailyConfig = configGlobal.horarioPorDia?.[dayOfWeek] || { isAbierto: true, apertura: "06:00", cierre: "22:00", descansos: [] };
+
+  if (!dailyConfig.isAbierto) return { cerrado: true, slots: [] };
+
+  const startFloat = timeStringToFloat(dailyConfig.apertura) || 6.0;
+  const endFloat = timeStringToFloat(dailyConfig.cierre) || 22.0;
+  const intervalFloat = (configGlobal.intervaloMinutos || 60) / 60; // 0.5 o 1.0
+
+  const rests = (dailyConfig.descansos || []).map(d => ({
+    start: timeStringToFloat(d.inicio),
+    end: timeStringToFloat(d.fin)
+  }));
+
+  const slots = [];
+  for (let current = startFloat; current < endFloat; current += intervalFloat) {
+    const isResting = rests.some(r => current < r.end && (current + intervalFloat) > r.start);
+    if (!isResting) {
+      slots.push(current);
+    }
+  }
+  return { cerrado: false, slots };
+};
+
 export default function NuevaReserva() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -603,59 +651,85 @@ export default function NuevaReserva() {
                         )}
                       </label>
 
-                      {fecha && fecha.includes("T") ? (
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-inner border border-gray-100 dark:border-gray-700">
-                          <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                            {Array.from({ length: 17 }, (_, i) => i + 6).map((h) => {
-                              const now = new Date();
-                              const selectedDateObj = new Date(fecha.split("T")[0] + "T00:00:00");
-                              const isTodayLocal = selectedDateObj.getDate() === now.getDate() &&
-                                selectedDateObj.getMonth() === now.getMonth() &&
-                                selectedDateObj.getFullYear() === now.getFullYear();
+                      {fecha && fecha.includes("T") ? (() => {
+                        const horarioData = generarSlotsHorario(cancha, fecha);
 
-                              const isPastHour = isTodayLocal && h <= now.getHours();
+                        if (horarioData.cerrado) {
+                          return (
+                            <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-6 text-center border-2 border-dashed border-red-200 dark:border-red-900/50">
+                              <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-2 opacity-50" />
+                              <p className="text-red-600 dark:text-red-400 font-semibold mb-1">Cerrado este día</p>
+                              <p className="text-xs text-red-500 dark:text-red-300">La cancha o sede no preste servicios en el día seleccionado. Intenta con otra fecha.</p>
+                            </div>
+                          );
+                        }
 
-                              // Check de Choque Temporal 
-                              const startPropuesto = h;
-                              const endPropuesto = h + horas;
-                              const isOccupied = horasOcupadas.some(ocupada => {
-                                const [hOcStart, m1] = ocupada.horaInicio.split(":").map(Number);
-                                const [hOcEnd, m2] = ocupada.horaFin.split(":").map(Number);
-                                const ocStart = hOcStart + (m1 / 60);
-                                const ocEnd = hOcEnd + (m2 / 60);
-                                return (startPropuesto < ocEnd && endPropuesto > ocStart);
-                              });
+                        if (horarioData.slots.length === 0) {
+                          return (
+                            <div className="bg-orange-50 dark:bg-orange-900/20 rounded-2xl p-6 text-center border border-orange-200 dark:border-orange-900/50">
+                              <p className="text-orange-600 dark:text-orange-400 font-semibold mb-1">Cerrado este día</p>
+                              <p className="text-xs text-orange-500 dark:text-orange-300">No hay horarios disponibles configurados para prestrar servicio hoy.</p>
+                            </div>
+                          );
+                        }
 
-                              const isDisabled = isPastHour || isOccupied;
-                              const isSelected = fecha.split("T")[1] === `${h.toString().padStart(2, "0")}:00`;
+                        return (
+                          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-inner border border-gray-100 dark:border-gray-700">
+                            <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2">
+                              {horarioData.slots.map((h) => {
+                                const now = new Date();
+                                const selectedDateObj = new Date(fecha.split("T")[0] + "T00:00:00");
+                                const isTodayLocal = selectedDateObj.getDate() === now.getDate() &&
+                                  selectedDateObj.getMonth() === now.getMonth() &&
+                                  selectedDateObj.getFullYear() === now.getFullYear();
 
-                              return (
-                                <button
-                                  key={h}
-                                  disabled={isDisabled}
-                                  onClick={() => {
-                                    if (!isDisabled) {
-                                      const horaExacta = `${h.toString().padStart(2, "0")}:00`;
-                                      const baseString = fecha.split("T")[0];
-                                      manejarSeleccionFecha(`${baseString}T${horaExacta}`);
-                                    }
-                                  }}
-                                  className={`px-2 py-3 rounded-xl font-semibold text-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${isOccupied
-                                    ? "opacity-60 cursor-not-allowed bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 line-through decoration-red-500"
-                                    : isPastHour
-                                      ? "opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-600"
-                                      : isSelected
-                                        ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg scale-105"
-                                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                                    }`}
-                                >
-                                  {`${h.toString().padStart(2, "0")}:00`}
-                                </button>
-                              );
-                            })}
+                                const hInt = Math.floor(h);
+                                const hMins = Math.round((h - hInt) * 60);
+                                const isPastHour = isTodayLocal && (hInt < now.getHours() || (hInt === now.getHours() && hMins <= now.getMinutes()));
+
+                                // Check de Choque Temporal 
+                                const startPropuesto = h;
+                                const endPropuesto = h + horas;
+                                const isOccupied = horasOcupadas.some(ocupada => {
+                                  const [hOcStart, m1] = ocupada.horaInicio.split(":").map(Number);
+                                  const [hOcEnd, m2] = ocupada.horaFin.split(":").map(Number);
+                                  const ocStart = hOcStart + (m1 / 60);
+                                  const ocEnd = hOcEnd + (m2 / 60);
+                                  return (startPropuesto < ocEnd && endPropuesto > ocStart);
+                                });
+
+                                const isDisabled = isPastHour || isOccupied;
+
+                                const horaExactaStr = floatToTimeString(h);
+                                const isSelected = fecha.split("T")[1] === horaExactaStr;
+
+                                return (
+                                  <button
+                                    key={h}
+                                    disabled={isDisabled}
+                                    onClick={() => {
+                                      if (!isDisabled) {
+                                        const baseString = fecha.split("T")[0];
+                                        manejarSeleccionFecha(`${baseString}T${horaExactaStr}`);
+                                      }
+                                    }}
+                                    className={`px-2 py-3 rounded-xl font-semibold text-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${isOccupied
+                                      ? "opacity-60 cursor-not-allowed bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 line-through decoration-red-500"
+                                      : isPastHour
+                                        ? "opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-600"
+                                        : isSelected
+                                          ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg scale-105"
+                                          : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                                      }`}
+                                  >
+                                    {horaExactaStr}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      ) : (
+                        );
+                      })() : (
                         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-8 text-center border-2 border-dashed border-gray-200 dark:border-gray-700">
                           <p className="text-gray-500 dark:text-gray-400">Por favor, selecciona primero un día en el paso 2.</p>
                         </div>

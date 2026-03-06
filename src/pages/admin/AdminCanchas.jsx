@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Building2, Edit, Layers3, MapPin, Plus, Trash2, Image as ImageIcon, UploadCloud, X, Save, Clock, Info, CheckCircle, ChevronRight } from "lucide-react";
+import { ArrowLeft, Building2, Edit, Layers3, MapPin, Plus, Trash2, Image as ImageIcon, UploadCloud, X, Save, Clock, Info, CheckCircle, ChevronRight, Loader2, Copy } from "lucide-react";
+import api from "../../api/axios.js";
 import {
   fetchCanchas,
   createCancha,
@@ -161,11 +162,52 @@ function WeeklyScheduleEditor({ value, onChange }) {
   );
 }
 
-// Dummy/Placeholder para Drag&Drop de S3
+// Componente Real para Drag&Drop hacia S3
 function ImageUploader({ images, onChange }) {
-  const handleUrlAdd = () => {
-    const url = window.prompt("Introduce una URL de imagen temporal (Próximamente S3):", "https://via.placeholder.com/400x300");
-    if (url) onChange([...(images || []), url]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleUploadFiles = async (files) => {
+    if (!files || files.length === 0) return;
+
+    // Validar tipo y tamaño 
+    const validFiles = Array.from(files).filter(file => {
+      if (!file.type.startsWith("image/")) {
+        alert("Solo se permiten archivos de imagen.");
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Una imagen excede el límite de 5MB.");
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    validFiles.forEach((file) => formData.append("files", file));
+
+    try {
+      const { data } = await api.post("/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      if (data.urls) {
+        onChange([...(images || []), ...data.urls]);
+      }
+    } catch (error) {
+      console.error("Upload error", error);
+      alert("Error al subir imagen(es). Intenta de nuevo.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleUploadFiles(e.dataTransfer.files);
   };
 
   const removeImage = (index) => {
@@ -181,26 +223,44 @@ function ImageUploader({ images, onChange }) {
         Galería de Imágenes
       </p>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
-        {(images || []).map((img, idx) => (
-          <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 aspect-video">
-            <img src={img} alt="Preview" className="w-full h-full object-cover" />
-            <button type="button" onClick={() => removeImage(idx)} className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
-      </div>
+      {images && images.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+          {images.map((img, idx) => (
+            <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 aspect-video">
+              <img src={img} alt="Preview" className="w-full h-full object-cover" />
+              <button type="button" onClick={() => removeImage(idx)} className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
-      <button
-        type="button"
-        onClick={handleUrlAdd}
-        className="w-full border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-gray-800/50 hover:border-blue-500 transition-colors cursor-pointer"
+      <label
+        onDrop={handleDrop}
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
+        className={`w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center transition-colors cursor-pointer relative overflow-hidden ${isDragging
+          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+          : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+          } ${isUploading ? "pointer-events-none opacity-80" : ""}`}
       >
-        <UploadCloud className="w-8 h-8 mb-2 opacity-50" />
-        <span className="text-sm font-medium">Añadir imagen (Preparado para S3)</span>
-        <span className="text-xs opacity-70 mt-1">Soporte Drag & Drop en próxima versión</span>
-      </button>
+        <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => handleUploadFiles(e.target.files)} disabled={isUploading} />
+
+        {isUploading ? (
+          <div className="flex flex-col items-center animate-in fade-in duration-300">
+            <Loader2 className="w-8 h-8 mb-2 text-blue-500 animate-spin" />
+            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">Subiendo a AWS S3...</span>
+            <span className="text-xs text-blue-500/70 mt-1">Por favor espera un momento</span>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center animate-in fade-in duration-300">
+            <UploadCloud className={`w-8 h-8 mb-2 transition-colors ${isDragging ? "text-blue-500" : "text-gray-400 dark:text-gray-500"}`} />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Haz clic para buscar fotos o arrástralas aquí</span>
+            <span className="text-xs text-gray-500 mt-1">Máximo 5MB por archivo (JPG o PNG)</span>
+          </div>
+        )}
+      </label>
     </div>
   );
 }
@@ -397,6 +457,21 @@ export default function AdminCanchas() {
       configuracionHorario: escenario.configuracionHorario || initialEscenarioForm.configuracionHorario
     });
     setIsEscenarioModalOpen(true);
+  };
+
+  const handleDuplicateEscenario = (escenario) => {
+    setEditingEscenarioId(null); // Es una Creación Nueva
+    setEscenarioForm({
+      nombre: `${escenario.nombre} (Copia)`,
+      tipoDeporte: escenario.tipoDeporte,
+      superficie: escenario.superficie,
+      precioPorHora: escenario.precioPorHora,
+      activo: escenario.activo !== false,
+      imagenes: escenario.imagenes || [], // Clonar imágenes en la nueva entidad
+      usarHorarioPersonalizado: escenario.usarHorarioPersonalizado === true,
+      configuracionHorario: escenario.configuracionHorario || initialEscenarioForm.configuracionHorario
+    });
+    setIsEscenarioModalOpen(true); // Abrir modal pre-rellenado para Confirmar y Guardar
   };
 
   const handleDeleteEscenario = async (escenarioId) => {
@@ -667,9 +742,10 @@ export default function AdminCanchas() {
                               {escenario.usarHorarioPersonalizado && <span className="px-2.5 py-1.5 text-xs font-bold uppercase bg-purple-50 border border-purple-200 text-purple-700 dark:bg-purple-900/30 dark:border-purple-800/50 dark:text-purple-300 rounded-lg flex items-center gap-1.5" title="Horario diferente al de la Sede"><Clock className="w-3.5 h-3.5" /> Indep.</span>}
                             </div>
 
-                            <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700/50 flex gap-3">
-                              <button onClick={() => handleEditEscenario(escenario)} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-600 dark:hover:text-white rounded-xl font-semibold transition-colors"><Edit className="w-4 h-4" /> Editar</button>
-                              <button onClick={() => handleDeleteEscenario(escenario._id)} className="w-12 flex items-center justify-center bg-red-50 text-red-600 hover:bg-red-600 hover:text-white dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-600 dark:hover:text-white rounded-xl transition-colors"><Trash2 className="w-4 h-4" /></button>
+                            <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700/50 flex gap-2">
+                              <button onClick={() => handleEditEscenario(escenario)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-600 dark:hover:text-white rounded-xl font-semibold transition-colors text-sm"><Edit className="w-4 h-4" /> Editar</button>
+                              <button onClick={() => handleDuplicateEscenario(escenario)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-600 dark:hover:text-white rounded-xl font-semibold transition-colors text-sm" title="Clonar escenario"><Copy className="w-4 h-4" /> Duplicar</button>
+                              <button onClick={() => handleDeleteEscenario(escenario._id)} className="w-11 shrink-0 flex items-center justify-center bg-red-50 text-red-600 hover:bg-red-600 hover:text-white dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-600 dark:hover:text-white rounded-xl transition-colors"><Trash2 className="w-4 h-4" /></button>
                             </div>
                           </div>
                         </div>

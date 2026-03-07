@@ -1,27 +1,24 @@
-// frontend/src/utils/imageUrl.js
-
 /**
  * Construye la URL absoluta de una imagen desde backend.
  * Soporta:
- * - IDs de GridFS (24 hex) -> /api/upload/files/:id
- * - URLs absolutas (http/https) -> se retornan tal cual
- * - rutas locales /uploads y nombres de archivo (modo dev)
+ * - URLs absolutas (AWS S3, Cloudinary) -> se retornan tal cual
+ * - Fallbacks seguros si no hay imagen
  */
 export const imageUrl = (filename) => {
   if (!filename) {
-    console.warn("imageUrl: No filename provided");
-    return "/no-image.png";
+    return 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=2670&auto=format&fit=crop';
   }
 
-  // URLs absolutas (Cloudinary/S3) se usan tal cual
-  if (/^https?:\/\//.test(filename)) {
+  // URLs absolutas de AWS S3 o Cloudinary se usan tal cual
+  if (filename.startsWith('http://') || filename.startsWith('https://')) {
     return filename;
   }
 
+  // Esto es para retro-compatibilidad por si aún hay fotos subidas via el endpoint de Uploads antiguo
   const apiBase = import.meta.env.VITE_API_URL || "/api";
   const baseUrl = apiBase.replace("/api", "");
 
-  // Si es un ObjectId de Mongo (24 hex), usar endpoint público GridFS
+  // Si es un ObjectId de Mongo (24 hex), antigua estrategia GridFS
   if (/^[a-f0-9]{24}$/.test(filename)) {
     return `${apiBase}/upload/files/${filename}`;
   }
@@ -39,7 +36,6 @@ export const checkImageExists = async (url) => {
     const response = await fetch(url, { method: "HEAD" });
     return response.ok;
   } catch (error) {
-    console.error("Error checking image:", error);
     return false;
   }
 };

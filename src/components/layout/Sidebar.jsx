@@ -41,32 +41,35 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       label: "Canchas",
       icon: MdSportsSoccer,
       path: "/canchas",
+      roles: ["usuario", "admin_cancha", "admin_sistema"],
     },
     {
       key: "reservas",
       label: "Mis Reservas",
       icon: FiCalendar,
       path: "/reservas",
-      roles: ["usuario", "admin_cancha", "admin_sistema"],
+      roles: ["usuario"],
     },
     {
       key: "admin-panel",
       label: "Panel de Administrador",
       icon: MdAdminPanelSettings,
       path: "/admin",
-      roles: ["admin_sistema"],
+      roles: ["admin_cancha", "admin_sistema"],
       submenu: [
         {
           key: "admin-canchas",
           label: "Gestión de Sedes y Escenarios",
           icon: MdSportsSoccer,
           path: "/admin/canchas",
+          roles: ["admin_cancha", "admin_sistema"],
         },
         {
           key: "admin-sistema",
           label: "Administración Sistema",
           icon: FiSettings,
           path: "/admin/sistema",
+          roles: ["admin_sistema"],
         },
       ],
     },
@@ -79,8 +82,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const MenuItem = ({ item }) => {
     const hasSubmenu = item.submenu && item.submenu.length > 0;
     const isExpanded = expandedMenus[item.key];
+    const filteredSubmenu = hasSubmenu
+      ? item.submenu.filter((sub) => !sub.roles || sub.roles.includes(user?.role))
+      : [];
     const isItemActive = hasSubmenu
-      ? isParentActive(item.submenu.map((sub) => sub.path))
+      ? isParentActive(filteredSubmenu.map((sub) => sub.path))
       : isActive(item.path);
 
     if (hasSubmenu) {
@@ -111,7 +117,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
           {isExpanded && (
             <div className="ml-4 mt-2 space-y-1">
-              {item.submenu.map((subItem) => (
+              {filteredSubmenu.map((subItem) => (
                 <Link
                   key={subItem.key}
                   to={subItem.path}
@@ -194,12 +200,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-lg">
-                {user?.nombre?.charAt(0)?.toUpperCase() || "U"}
+                {user?.name?.charAt(0)?.toUpperCase() || "U"}
               </span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-gray-800 dark:text-white truncate">
-                Hola, {user?.nombre || "Invitado"}
+                Hola, {user?.name || "Invitado"}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
               <span
@@ -212,9 +218,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 }`}
               >
                 {user?.role === "admin_sistema"
-                  ? "Administrador"
+                  ? "Administrador del Sistema"
                   : user?.role === "admin_cancha"
-                  ? "Admin Cancha"
+                  ? "Administrador de Cancha"
                   : "Usuario"}
               </span>
             </div>

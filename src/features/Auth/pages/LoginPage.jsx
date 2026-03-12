@@ -81,7 +81,11 @@ export default function LoginPage() {
     }
   };
 
-  if (user) return <Navigate to="/home" />;
+  if (user) {
+    if (user.role === "admin_sistema") return <Navigate to="/admin/sistema" />;
+    if (user.role === "admin_cancha") return <Navigate to="/admin/canchas" />;
+    return <Navigate to="/home" />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 flex items-center justify-center p-4">

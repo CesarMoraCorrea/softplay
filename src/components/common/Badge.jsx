@@ -15,15 +15,15 @@ const Badge = ({
   
   // Variantes
   const variantClasses = {
-    default: 'bg-gray-100 text-gray-800',
-    primary: 'bg-blue-100 text-blue-800',
-    secondary: 'bg-purple-100 text-purple-800',
-    success: 'bg-green-100 text-green-800',
-    danger: 'bg-red-100 text-red-800',
-    warning: 'bg-amber-100 text-amber-800',
-    info: 'bg-sky-100 text-sky-800',
-    outline: 'bg-transparent border border-gray-300 text-gray-700',
-    'outline-primary': 'bg-transparent border border-blue-500 text-blue-600'
+    default: 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100',
+    primary: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200',
+    secondary: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200',
+    success: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200',
+    danger: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200',
+    warning: 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200',
+    info: 'bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-200',
+    outline: 'bg-transparent border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300',
+    'outline-primary': 'bg-transparent border border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
   };
   
   // Tamaños

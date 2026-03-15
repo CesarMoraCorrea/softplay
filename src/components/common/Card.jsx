@@ -13,13 +13,13 @@ const Card = ({
   
   // Variantes
   const variantClasses = {
-    default: 'bg-white border border-gray-200 shadow-sm',
-    elevated: 'bg-white border border-gray-100 shadow-md',
-    glass: 'bg-white/90 backdrop-blur-sm border border-white/20',
-    outline: 'bg-white border-2 border-gray-200',
-    filled: 'bg-gray-100 border border-gray-200',
-    primary: 'bg-blue-50 border border-blue-200',
-    secondary: 'bg-purple-50 border border-purple-200'
+    default: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm',
+    elevated: 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-md',
+    glass: 'bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-white/20 dark:border-gray-700/50',
+    outline: 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700',
+    filled: 'bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600',
+    primary: 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50',
+    secondary: 'bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700/50'
   };
   
   // Hover
@@ -42,7 +42,7 @@ const Card = ({
 
 // Componentes adicionales para estructura de Card
 const CardHeader = ({ children, className = '', ...props }) => {
-  const classes = ['p-4 border-b border-gray-100', className].join(' ');
+  const classes = ['p-4 border-b border-gray-100 dark:border-gray-700', className].join(' ');
   return (
     <div className={classes} {...props}>
       {children}
@@ -60,7 +60,7 @@ const CardBody = ({ children, className = '', ...props }) => {
 };
 
 const CardFooter = ({ children, className = '', ...props }) => {
-  const classes = ['p-4 border-t border-gray-100', className].join(' ');
+  const classes = ['p-4 border-t border-gray-100 dark:border-gray-700', className].join(' ');
   return (
     <div className={classes} {...props}>
       {children}
@@ -83,7 +83,7 @@ const CardTitle = ({ children, className = '', ...props }) => {
 };
 
 const CardDescription = ({ children, className = '', ...props }) => {
-  const classes = ['text-gray-600 mt-1', className].join(' ');
+  const classes = ['text-gray-600 dark:text-gray-400 mt-1', className].join(' ');
   return (
     <p className={classes} {...props}>
       {children}

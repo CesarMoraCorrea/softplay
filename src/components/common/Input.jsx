@@ -31,8 +31,8 @@ const Input = forwardRef((
 
   // Estados
   const stateClasses = {
-    default: 'focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:border-blue-400 dark:focus:ring-blue-300/30',
-    error: 'border-red-300 dark:border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-300/30',
+    default: 'focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:border-blue-400 dark:focus:ring-blue-500/50',
+    error: 'border-red-300 dark:border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-500/50',
     disabled: 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-300 cursor-not-allowed'
   };
 

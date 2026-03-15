@@ -37,28 +37,16 @@ export default function ReservaDetalle() {
     }
   };
 
-  const handlePaymentSuccess = (paymentData) => {
-    // Actualizar el estado de la reserva después del pago exitoso
-    setReserva((prev) => ({
-      ...prev,
-      estado: "pagada",
-      paymentStatus: "succeeded",
-      transactionId: paymentData.id,
-      paymentDate: new Date(),
-    }));
-  };
-
-  // Formatear fecha
+  // Formatear fecha asegurando la zona horaria
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    return date.toLocaleDateString("es-ES", {
+    date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+    return date.toLocaleDateString("es-AR", {
       weekday: "long",
       year: "numeric",
       month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      day: "numeric"
     });
   };
 
@@ -113,134 +101,116 @@ export default function ReservaDetalle() {
           </div>
         </div>
       ) : reserva ? (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-200 dark:border-gray-700">
-          {/* Encabezado con estado */}
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-1">
-                  {reserva.cancha?.nombre || "Cancha"}
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Reserva #{reserva._id.substring(reserva._id.length - 6)}
-                </p>
-              </div>
-              <div
-                className={`px-4 py-2 rounded-full flex items-center gap-2 ${getStatusColor(
-                  reserva.estado
-                )}`}
-              >
-                {getStatusIcon(reserva.estado)}
-                <span className="font-medium capitalize">{reserva.estado}</span>
-              </div>
-            </div>
-          </div>
+        <div className="max-w-4xl mx-auto rounded-3xl shadow-2xl overflow-hidden bg-white dark:bg-gray-800 border-t-[12px] border-primary">
+          <div className="grid grid-cols-1 md:grid-cols-3">
 
-          {/* Detalles de la reserva */}
-          <div className="p-6 space-y-6">
-            {/* Fecha y hora */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-800 dark:text-white">
-                Información de la Reserva
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-start gap-3">
-                  <Calendar className="w-5 h-5 text-primary mt-0.5" />
-                  <div>
-                    <p className="font-medium text-gray-700 dark:text-gray-300">Fecha y Hora</p>
-                    <p className="text-gray-600 dark:text-gray-400">{formatDate(reserva.fecha)}</p>
-                  </div>
+            {/* PANEL PRINCIPAL - IZQUIERDA (2 columnas) */}
+            <div className="md:col-span-2 p-8 md:pr-12 md:pl-10 space-y-8 relative">
+
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-3xl font-black text-gray-900 dark:text-white leading-tight">
+                    {reserva.cancha?.nombre || "Cancha"}
+                  </h2>
+                  <p className="text-sm font-medium text-gray-400 mt-2 uppercase tracking-widest">
+                    ID #{reserva._id.substring(reserva._id.length - 8)}
+                  </p>
                 </div>
-                <div className="flex items-start gap-3">
-                  <Clock className="w-5 h-5 text-primary mt-0.5" />
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex gap-4 p-5 bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800/50">
+                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-800/80 text-blue-600 dark:text-blue-300 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm mt-1">
+                    <Calendar className="w-6 h-6" />
+                  </div>
                   <div>
-                    <p className="font-medium text-gray-700 dark:text-gray-300">Duración</p>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {reserva.horas} {reserva.horas === 1 ? "hora" : "horas"}
+                    <p className="text-sm text-blue-600/80 dark:text-blue-300/80 font-semibold uppercase tracking-wide">Fecha de Juego</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100 capitalize">
+                      {formatDate(reserva.fecha)}
                     </p>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Información de la cancha */}
-            {reserva.cancha && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-800 dark:text-white">
-                  Información de la Cancha
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {reserva.cancha.tipoCancha && (
-                    <div className="flex items-start gap-3">
-                      <Tag className="w-5 h-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="font-medium text-gray-700 dark:text-gray-300">
-                          Tipo de Cancha
-                        </p>
-                        <p className="text-gray-600 dark:text-gray-400">
-                          {reserva.cancha.tipoCancha}
-                        </p>
-                      </div>
+                <div className="flex gap-4 p-5 bg-purple-50/50 dark:bg-purple-900/20 rounded-2xl border border-purple-100 dark:border-purple-800/50">
+                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-800/80 text-purple-600 dark:text-purple-300 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm mt-1">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-purple-600/80 dark:text-purple-300/80 font-semibold uppercase tracking-wide">Horario y Duración</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                      {reserva.horaInicio} a {reserva.horaFin}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mt-1">
+                      Turno de {reserva.horas} {reserva.horas === 1 ? "hora" : "horas"}
+                    </p>
+                  </div>
+                </div>
+
+                {reserva.cancha?.tipoCancha && (
+                  <div className="flex gap-4 p-5 bg-orange-50/50 dark:bg-orange-900/20 rounded-2xl border border-orange-100 dark:border-orange-800/50">
+                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-800/80 text-orange-600 dark:text-orange-300 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm mt-1">
+                      <Tag className="w-6 h-6" />
                     </div>
-                  )}
-                  <div className="flex items-start gap-3">
-                    <DollarSign className="w-5 h-5 text-primary mt-0.5" />
                     <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Precio Total</p>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        ${reserva.total.toLocaleString("es-AR")}
+                      <p className="text-sm text-orange-600/80 dark:text-orange-300/80 font-semibold uppercase tracking-wide">Deporte</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                        {reserva.cancha.tipoCancha}
                       </p>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
 
-            {/* Componente de pago para reservas pendientes */}
-            {reserva.estado === "pendiente" && (
-              <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-                <PaymentComponent reserva={reserva} onPaymentSuccess={handlePaymentSuccess} />
-              </div>
-            )}
+            {/* BARRA LATERAL (RECIBO) - DERECHA */}
+            <div className="bg-gray-50 dark:bg-gray-900 p-8 flex flex-col justify-between border-l border-dashed border-gray-300 dark:border-gray-700 relative">
+              {/* Semi-círculos de corte de "boleto" (Opcional - visual effect) */}
+              <div className="hidden md:block absolute -left-4 top-1/2 w-8 h-8 rounded-full bg-slate-100 dark:bg-gray-800 -mt-4 shadow-inner" />
 
-            {/* Información de pago para reservas pagadas */}
-            {reserva.estado === "pagada" && reserva.transactionId && (
-              <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                    <h4 className="font-medium text-green-800 dark:text-green-300">
-                      Pago Confirmado
-                    </h4>
+              <div className="space-y-6">
+                <div>
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Estado de Reserva</p>
+                  <div
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border-2 ${getStatusColor(
+                      reserva.estado
+                    ).replace('bg-', 'border-').replace('text-', 'text-')}`}
+                  >
+                    {getStatusIcon(reserva.estado)}
+                    <span className="font-bold tracking-wide capitalize">{reserva.estado}</span>
                   </div>
-                  <div className="space-y-1 text-sm text-green-700 dark:text-green-400">
-                    <p>
-                      <strong>ID de Transacción:</strong> {reserva.transactionId}
+                </div>
+
+                <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Costo Total</p>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600 dark:text-gray-400 font-medium">Tarifa base</span>
+                    <span className="text-3xl font-black text-gray-900 dark:text-white mt-1">
+                      ${reserva.total.toLocaleString("es-AR")}
+                    </span>
+                  </div>
+                </div>
+
+                {reserva.estado === "pendiente" && (
+                  <div className="bg-yellow-100/50 dark:bg-yellow-900/40 border-l-4 border-yellow-500/80 p-4 rounded mt-4">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200/90 font-medium leading-relaxed">
+                      El módulo de pagos quedará para una implementación posterior. Mantén tu reserva como pendiente.
                     </p>
-                    {reserva.paymentMethod && (
-                      <p>
-                        <strong>Método de Pago:</strong> {reserva.paymentMethod}
-                      </p>
-                    )}
-                    {reserva.paymentDate && (
-                      <p>
-                        <strong>Fecha de Pago:</strong>{" "}
-                        {new Date(reserva.paymentDate).toLocaleDateString("es-ES")}
-                      </p>
-                    )}
                   </div>
-                </div>
+                )}
               </div>
-            )}
 
-            {/* Acciones */}
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-3 justify-end">
-              <Link to="/reservas">
-                <Button variant="outline">Ver Todas Mis Reservas</Button>
-              </Link>
-              <Link to="/canchas">
-                <Button>Buscar Más Canchas</Button>
-              </Link>
+              <div className="mt-8 pt-6 space-y-3">
+                <Link to="/canchas" className="w-full block">
+                  <Button className="w-full shadow-lg py-6 font-bold text-sm tracking-wide">
+                    BUSCAR ALGO MÁS
+                  </Button>
+                </Link>
+                <Link to="/reservas" className="w-full block">
+                  <Button variant="outline" className="w-full py-4 text-sm bg-transparent border-gray-300 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors">
+                    Volver al Historial
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>

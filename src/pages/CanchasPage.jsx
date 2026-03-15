@@ -40,11 +40,35 @@ const CanchasPage = () => {
   // Cargar canchas desde el backend al montar el componente
   useEffect(() => {
     try {
-      dispatch(fetchCanchas(busqueda));
+      let query = "";
+
+      if (selectedSedeId) {
+        // Si hay sede seleccionada, enviar parámetros para filtrar escenarios del backend
+        const params = new URLSearchParams();
+        params.set("view", "escenarios");
+        params.set("sedeId", selectedSedeId);
+        if (busqueda) params.set("q", busqueda);
+        query = params.toString();
+        dispatch(fetchCanchas(query));
+      } else if (!selectedSedeId) {
+        // Si no hay sede, buscar sedes por término general
+        query = busqueda ? `q=${encodeURIComponent(busqueda)}` : "";
+        dispatch(fetchCanchas(query));
+      }
     } catch (err) {
       setError(err.message || "Error al cargar las canchas");
     }
-  }, [dispatch, busqueda]);
+  }, [dispatch, busqueda, selectedSedeId]);
+
+  useEffect(() => {
+    if (!selectedSedeId || !selectedSede) return;
+    // Solo validar si no estamos mostrando escenarios
+    // (cuando mostramos escenarios, 'sedes' contiene escenarios, no sedes)
+    if (selectedSede && selectedSede._id === selectedSedeId) return;
+
+    setSelectedSedeId(null);
+    setSelectedSede(null);
+  }, [selectedSedeId, selectedSede]);
 
   const handleBusquedaChange = (e) => {
     setBusqueda(e.target.value);
@@ -113,8 +137,22 @@ const CanchasPage = () => {
     console.log("Toggle favorito para cancha:", canchaId);
   };
 
-  // Ya no necesitamos filtrar localmente, el backend se encarga de eso
-  const canchasFiltradas = canchas;
+  // Cuando hay sede seleccionada, `sedes` contiene los escenarios filtrados del backend
+  const escenariosSeleccionados = selectedSedeId ? sedes : [];
+
+  // En vista mapa: siempre muestra sedes (deselecciona automáticamente)
+  // En vista lista: muestra escenarios si hay sede seleccionada, sino sedes
+  const mapItems = !selectedSede
+    ? sedes.map((sede) => ({
+      _id: sede._id,
+      nombre: sede.nombre,
+      direccion: sede?.ubicacion?.direccion,
+      ubicacion: {
+        lat: sede?.ubicacion?.lat,
+        lng: sede?.ubicacion?.lng,
+      },
+    }))
+    : escenariosSeleccionados;
 
   return (
     <div className="p-6">
@@ -147,28 +185,48 @@ const CanchasPage = () => {
             {/* Toggle para cambiar entre vista lista y mapa */}
             <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               <button
-                onClick={() => setVistaActual("mapa")}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  vistaActual === "mapa"
+                onClick={() => {
+                  setVistaActual("mapa");
+                  // Deseleccionar sede al cambiar a mapa para mostrar todas las sedes
+                  if (selectedSedeId) {
+                    setSelectedSedeId(null);
+                    setSelectedSede(null);
+                    setBusqueda("");
+                  }
+                }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${vistaActual === "mapa"
                     ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
                     : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-                }`}
+                  }`}
               >
                 <Map className="w-4 h-4" />
                 Mapa
               </button>
               <button
                 onClick={() => setVistaActual("lista")}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  vistaActual === "lista"
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${vistaActual === "lista"
                     ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
                     : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-                }`}
+                  }`}
               >
                 <List className="w-4 h-4" />
                 Lista
               </button>
             </div>
+
+            {selectedSede && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedSedeId(null);
+                  setSelectedSede(null);
+                }}
+                className="ml-2 text-sm"
+              >
+                Volver
+              </Button>
+            )}
           </div>
 
           {/* Componente de geolocalización */}
@@ -182,52 +240,52 @@ const CanchasPage = () => {
       {Object.values(filtros).some((v) =>
         Array.isArray(v) ? v.length > 0 : v !== "" && v !== 0 && v !== 5000
       ) && (
-        <div className="flex flex-wrap gap-2">
-          {filtros.ubicacion && (
-            <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full text-sm">
-              <MapPin className="w-4 h-4" />
-              {filtros.ubicacion}
-              <button onClick={() => handleFiltrosChange({ ubicacion: "" })}>
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-          {filtros.tipoCancha.map((tipo) => (
-            <div
-              key={tipo}
-              className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full text-sm"
-            >
-              {tipo}
-              <button
-                onClick={() =>
-                  handleFiltrosChange({
-                    tipoCancha: filtros.tipoCancha.filter((t) => t !== tipo),
-                  })
-                }
+          <div className="flex flex-wrap gap-2">
+            {filtros.ubicacion && (
+              <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full text-sm">
+                <MapPin className="w-4 h-4" />
+                {filtros.ubicacion}
+                <button onClick={() => handleFiltrosChange({ ubicacion: "" })}>
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            {filtros.tipoCancha.map((tipo) => (
+              <div
+                key={tipo}
+                className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full text-sm"
               >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-          {filtros.calificacionMinima > 0 && (
-            <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full text-sm">
-              <Star className="w-4 h-4 fill-current text-yellow-500" />
-              {filtros.calificacionMinima}+
-              <button onClick={() => handleFiltrosChange({ calificacionMinima: 0 })}>
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-          {/* Más filtros aplicados aquí */}
+                {tipo}
+                <button
+                  onClick={() =>
+                    handleFiltrosChange({
+                      tipoCancha: filtros.tipoCancha.filter((t) => t !== tipo),
+                    })
+                  }
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            {filtros.calificacionMinima > 0 && (
+              <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full text-sm">
+                <Star className="w-4 h-4 fill-current text-yellow-500" />
+                {filtros.calificacionMinima}+
+                <button onClick={() => handleFiltrosChange({ calificacionMinima: 0 })}>
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            {/* Más filtros aplicados aquí */}
 
-          <button
-            onClick={limpiarFiltros}
-            className="text-sm text-primary hover:text-primary-dark dark:hover:text-primary-light"
-          >
-            Limpiar todos
-          </button>
-        </div>
-      )}
+            <button
+              onClick={limpiarFiltros}
+              className="text-sm text-primary hover:text-primary-dark dark:hover:text-primary-light"
+            >
+              Limpiar todos
+            </button>
+          </div>
+        )}
 
       {/* Mensaje de error */}
       {error && (
@@ -247,20 +305,78 @@ const CanchasPage = () => {
         vistaActual === "mapa" ? (
           <GoogleMapsView userLocation={filtros.coordenadas} canchas={canchasFiltradas} />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {canchasFiltradas.map((cancha) => (
-              <CanchaCard
-                key={cancha._id}
-                cancha={{
-                  ...cancha,
-                  precio: cancha.precioHora, // Mapear precioHora a precio para compatibilidad
-                  horariosDisponibles: cancha.horarios || [], // Asegurar que siempre haya un array de horarios
-                }}
-                isFavorite={false} // En una implementación real, esto vendría del estado
-                onToggleFavorite={() => toggleFavorito(cancha._id)}
-              />
-            ))}
-          </div>
+          !selectedSede ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sedes.map((sede) => (
+                <Card key={sede._id} variant="glass" className="overflow-hidden p-0 group cursor-pointer flex flex-col">
+                  {/* Foto de la Sede al tope del Card */}
+                  <div className="h-48 w-full bg-gray-100 dark:bg-gray-800 relative overflow-hidden">
+                    {(sede.imagenes && sede.imagenes.length > 0) ? (
+                      <img src={sede.imagenes[0]} alt={sede.nombre} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <Building2 className="w-10 h-10 opacity-30" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Contenido (Textos y Botones) */}
+                  <div className="p-5 flex-1 flex flex-col">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-1">{sede.nombre}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span className="line-clamp-1">{sede?.ubicacion?.direccion || "Dirección no disponible"}</span>
+                        </p>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-lg">
+                        <Building2 className="w-5 h-5" />
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <span className="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">{(sede.escenarios || []).length} escenarios</span>
+                      <span className="text-gray-500 dark:text-gray-400">{sede?.ubicacion?.barrio || "Sin barrio"}</span>
+                    </div>
+
+                    <div className="mt-auto pt-5">
+                      <Button className="w-full bg-blue-600 hover:bg-blue-700 font-bold shadow-md" onClick={() => {
+                        setSelectedSedeId(sede._id);
+                        setSelectedSede(sede); // Guardar la sede seleccionada
+                        setBusqueda(""); // Limpiar búsqueda al seleccionar una sede
+                      }}>
+                        Ver escenarios disponibles
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {escenariosSeleccionados.length > 0 ? (
+                escenariosSeleccionados.map((cancha) => (
+                  <CanchaCard
+                    key={cancha.escenarioId || cancha._id}
+                    cancha={cancha}
+                    isFavorite={false}
+                    onToggleFavorite={() => toggleFavorito(cancha._id)}
+                  />
+                ))
+              ) : (
+                <EmptyState
+                  icon={<MapPin className="w-8 h-8 text-gray-400 dark:text-gray-300" />}
+                  title="No se encontraron escenarios"
+                  description="Prueba con otra búsqueda."
+                >
+                  <Button variant="primary" onClick={() => setBusqueda("")}>
+                    Limpiar búsqueda
+                  </Button>
+                </EmptyState>
+              )}
+            </div>
+          )
         )
       ) : (
         <EmptyState

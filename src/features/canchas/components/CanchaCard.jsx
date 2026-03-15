@@ -17,6 +17,7 @@ const CanchaCard = ({
     nombre,
     direccion,
     precioHora,
+    precioPorHora,
     precio, // Para compatibilidad con ambos formatos
     tipo,
     tipoCancha,
@@ -25,16 +26,23 @@ const CanchaCard = ({
     servicios = [],
     horariosDisponibles = [],
   } = cancha;
-  
-  // Usar precioHora o precio, dependiendo de cuál esté disponible
-  const precioMostrar = precioHora || precio || 0;
+
+  const isEscenarioData = Boolean(
+    escenarioId || cancha?.sedeId || tipoCancha || precioHora != null || cancha?.superficie
+  );
+
+  const reservaId = parseEntityId(escenarioId)
+    || (isEscenarioData ? (parseEntityId(_id) || parseEntityId(id)) : null);
+
+  // Usar precioHora, precioPorHora o precio, dependiendo de cuál esté disponible
+  const precioMostrar = precioHora || precioPorHora || precio || 0;
 
   // Imagen por defecto si no hay imágenes
   const imagenPrincipal = imagenes && imagenes.length > 0
-    ? imagenes[0].startsWith('http') 
-      ? imagenes[0] 
-      : imageUrl(imagenes[0])
-    : '/images/canchas/default.svg';
+    ? (imagenes[0].startsWith('http') || imagenes[0].startsWith('https')
+      ? imagenes[0]
+      : imageUrl(imagenes[0]))
+    : 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=2670&auto=format&fit=crop'; // fallback mejorado
 
   // Formatear precio
   const formatPrice = (price) => {
@@ -46,20 +54,23 @@ const CanchaCard = ({
   };
 
   return (
-    <Card 
-      variant="glass" 
+    <Card
+      variant="glass"
       className={`overflow-hidden hover:shadow-xl transition-all duration-300 ${className}`}
     >
       <div className="relative">
         {/* Imagen */}
-        <Link to={`/reservar/${_id}`}>
-          <img 
-            src={imagenPrincipal} 
-            alt={nombre} 
+        <Link
+          to={reservaId ? `/reservar/${reservaId}` : "/canchas"}
+          state={reservaId ? { cancha } : undefined}
+        >
+          <img
+            src={imagenPrincipal}
+            alt={nombre}
             className="w-full h-48 object-cover"
           />
         </Link>
-        
+
         {/* Botón de favorito */}
         {onToggleFavorite && (
           <button
@@ -67,23 +78,23 @@ const CanchaCard = ({
             className="absolute top-3 right-3 p-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full shadow-md hover:scale-110 transition-transform"
             aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
           >
-            <Heart 
-              className={`w-5 h-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600 dark:text-gray-300'}`} 
+            <Heart
+              className={`w-5 h-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600 dark:text-gray-300'}`}
             />
           </button>
         )}
-        
+
         {/* Tipo de cancha */}
         {(tipoCancha || tipo) && (
-          <Badge 
-            variant="primary" 
+          <Badge
+            variant="primary"
             className="absolute bottom-3 left-3"
           >
             {tipoCancha || tipo}
           </Badge>
         )}
       </div>
-      
+
       <Card.Body>
         {/* Título y calificación */}
         <div className="flex justify-between items-start mb-2">
@@ -92,7 +103,7 @@ const CanchaCard = ({
               {nombre}
             </Card.Title>
           </Link>
-          
+
           {calificacion > 0 && (
             <div className="flex items-center gap-1 bg-amber-100 text-amber-800 px-2 py-1 rounded-lg text-sm">
               <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
@@ -100,7 +111,7 @@ const CanchaCard = ({
             </div>
           )}
         </div>
-        
+
         {/* Dirección */}
         {direccion && (
           <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 text-sm mb-3">
@@ -108,7 +119,7 @@ const CanchaCard = ({
             <span>{direccion}</span>
           </div>
         )}
-        
+
         {/* Servicios */}
         {servicios && servicios.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
@@ -124,7 +135,7 @@ const CanchaCard = ({
             )}
           </div>
         )}
-        
+
         {/* Horarios disponibles */}
         {horariosDisponibles && horariosDisponibles.length > 0 && (
           <div className="mb-3">
@@ -145,7 +156,7 @@ const CanchaCard = ({
           </div>
         )}
       </Card.Body>
-      
+
       <Card.Footer className="flex justify-between items-center">
         {/* Precio */}
         <div className="flex items-center gap-1">
@@ -153,11 +164,12 @@ const CanchaCard = ({
           <span className="font-semibold">{formatPrice(precioMostrar)}</span>
           <span className="text-gray-600 dark:text-gray-400 text-sm">/hora</span>
         </div>
-        
+
         {/* Botón de reserva */}
-        <Link 
-          to={`/reservar/${_id}`}
-          className="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+        <Link
+          to={reservaId ? `/reservar/${reservaId}` : "/canchas"}
+          state={reservaId ? { cancha } : undefined}
+          className="px-3 py-1.5 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors text-sm font-medium"
         >
           Reservar
         </Link>
@@ -171,7 +183,9 @@ CanchaCard.propTypes = {
     _id: PropTypes.string.isRequired,
     nombre: PropTypes.string.isRequired,
     direccion: PropTypes.string,
-    precioHora: PropTypes.number.isRequired,
+    precioHora: PropTypes.number,
+    precioPorHora: PropTypes.number,
+    precio: PropTypes.number,
     tipoCancha: PropTypes.string,
     imagenes: PropTypes.arrayOf(PropTypes.string),
     calificacion: PropTypes.number,

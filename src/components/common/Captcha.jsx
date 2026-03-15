@@ -75,17 +75,17 @@ const Captcha = ({ onCaptchaChange, onVerifiedChange, error, disabled = false })
 
   return (
     <div className="space-y-3">
-      <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-        <FaShieldAlt className="text-gray-400" />
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+        <FaShieldAlt className="text-gray-400 dark:text-gray-500" />
         Verificación de seguridad
       </label>
       
       {/* CAPTCHA Display */}
       <div className="flex items-center gap-3">
-        <div className="flex-1 bg-gray-50 border-2 border-gray-200 rounded-xl p-3 min-h-[60px] flex items-center justify-center">
+        <div className="flex-1 bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-3 min-h-[60px] flex items-center justify-center">
           {loading ? (
-            <div className="flex items-center gap-2 text-gray-500">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 dark:border-blue-400"></div>
               <span className="text-sm">Generando...</span>
             </div>
           ) : captchaData ? (
@@ -94,7 +94,7 @@ const Captcha = ({ onCaptchaChange, onVerifiedChange, error, disabled = false })
               className="captcha-svg"
             />
           ) : (
-            <span className="text-gray-400 text-sm">Error cargando CAPTCHA</span>
+            <span className="text-gray-400 dark:text-gray-500 text-sm">Error cargando CAPTCHA</span>
           )}
         </div>
         
@@ -103,10 +103,10 @@ const Captcha = ({ onCaptchaChange, onVerifiedChange, error, disabled = false })
           type="button"
           onClick={generateCaptcha}
           disabled={loading || disabled}
-          className="p-3 bg-gray-100 hover:bg-gray-200 border-2 border-gray-200 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border-2 border-gray-200 dark:border-gray-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Generar nuevo CAPTCHA"
         >
-          <FaRedo className={`text-gray-600 ${loading ? 'animate-spin' : ''}`} />
+          <FaRedo className={`text-gray-600 dark:text-gray-400 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
       
@@ -118,16 +118,16 @@ const Captcha = ({ onCaptchaChange, onVerifiedChange, error, disabled = false })
           value={captchaInput}
           onChange={(e) => handleInputChange(e.target.value)}
           disabled={disabled || loading}
-          className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-xl focus:outline-none transition-colors ${
+          className={`w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 rounded-xl focus:outline-none transition-colors text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${
             verified
-              ? 'border-green-300 focus:border-green-500 bg-green-50'
+              ? 'border-green-300 dark:border-green-600 focus:border-green-500 bg-green-50 dark:bg-green-900/20'
               : error 
-                ? 'border-red-300 focus:border-red-500 bg-red-50' 
-                : 'border-gray-200 focus:border-blue-500 focus:bg-white'
+                ? 'border-red-300 dark:border-red-600 focus:border-red-500 bg-red-50 dark:bg-red-900/20' 
+                : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-700'
           }`}
         />
         {/* Indicadores de estado */}
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
           {checking && <FaSpinner className="animate-spin" />}
           {!checking && verified && <FaCheckCircle className="text-green-500" />}
         </div>
@@ -150,7 +150,7 @@ const Captcha = ({ onCaptchaChange, onVerifiedChange, error, disabled = false })
       )}
       
       {/* Help Text */}
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-gray-500 dark:text-gray-400">
         Ingresa exactamente los caracteres que ves en la imagen. No distingue entre mayúsculas y minúsculas.
       </p>
     </div>

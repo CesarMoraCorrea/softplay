@@ -21,7 +21,7 @@ const Button = ({
   
   // Variantes
   const variantClasses = {
-    default: 'bg-gray-100 hover:bg-gray-200 text-gray-800 focus:ring-gray-300',
+    default: 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 focus:ring-gray-300 dark:focus:ring-gray-600',
     primary: 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white focus:ring-blue-500',
     secondary: 'bg-gray-900/90 hover:bg-gray-900 text-white focus:ring-gray-700',
     success: 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500',
@@ -29,9 +29,9 @@ const Button = ({
     warning: 'bg-amber-500 hover:bg-amber-600 text-white focus:ring-amber-400',
     info: 'bg-sky-500 hover:bg-sky-600 text-white focus:ring-sky-400',
     soft: 'bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300',
-    outline: 'bg-transparent border-2 border-gray-300 hover:bg-gray-50 text-gray-700 focus:ring-gray-300 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700',
+    outline: 'bg-transparent border-2 border-gray-300 hover:bg-gray-50 text-gray-700 focus:ring-gray-300 dark:border-gray-400 dark:text-gray-100 dark:hover:bg-gray-700',
     'outline-primary': 'bg-transparent border-2 border-blue-500 hover:bg-blue-50 text-blue-600 focus:ring-blue-300',
-    ghost: 'bg-transparent hover:bg-gray-100 text-gray-700 focus:ring-gray-300 dark:text-gray-300 dark:hover:bg-gray-700',
+    ghost: 'bg-transparent hover:bg-gray-100 text-gray-700 focus:ring-gray-300 dark:text-gray-200 dark:hover:bg-gray-700',
     link: 'bg-transparent underline underline-offset-4 hover:underline text-blue-600 hover:text-blue-800 p-0 focus:ring-0 focus:ring-offset-0'
   };
   

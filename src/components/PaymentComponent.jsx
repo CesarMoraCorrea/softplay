@@ -255,7 +255,7 @@ export default function PaymentComponent({ reserva, onPaymentSuccess }) {
                 value={method.id}
                 checked={selectedMethod === method.id}
                 onChange={(e) => setSelectedMethod(e.target.value)}
-                className="mr-3"
+                className="w-4 h-4 accent-blue-500 mr-3"
               />
               <div className="flex items-center gap-3">
                 {getMethodIcon(method.id)}

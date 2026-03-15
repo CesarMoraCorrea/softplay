@@ -98,7 +98,7 @@ const FiltrosCanchas = ({
                     onFiltrosChange({ tipoCancha: [...tipoCancha, tipo] });
                   }
                 }}
-                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filtros.tipoCancha.includes(tipo) ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
+                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filtros.tipoCancha.includes(tipo) ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
               >
                 {tipo}
               </button>
@@ -138,7 +138,7 @@ const FiltrosCanchas = ({
                     onFiltrosChange({ horario: [...horariosList, horario] });
                   }
                 }}
-                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filtros.horario.includes(horario) ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
+                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filtros.horario.includes(horario) ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
               >
                 {horario}
               </button>
@@ -164,7 +164,7 @@ const FiltrosCanchas = ({
                     onFiltrosChange({ servicios: [...serviciosList, servicio.nombre] });
                   }
                 }}
-                className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium transition-colors ${filtros.servicios.includes(servicio.nombre) ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
+                className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium transition-colors ${filtros.servicios.includes(servicio.nombre) ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
               >
                 {servicio.icon}
                 <span>{servicio.nombre}</span>

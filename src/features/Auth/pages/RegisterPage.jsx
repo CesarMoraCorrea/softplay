@@ -137,7 +137,10 @@ export default function RegisterPage() {
       const result = await dispatch(registerThunk(registerData));
       
       if (result.type.endsWith('/fulfilled')) {
-        navigate("/");
+        const registeredUser = result.payload?.user;
+        if (registeredUser?.role === 'admin_sistema') navigate('/admin/sistema');
+        else if (registeredUser?.role === 'admin_cancha') navigate('/admin/canchas');
+        else navigate('/home');
       }
     }
   };

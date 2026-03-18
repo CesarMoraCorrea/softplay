@@ -17,6 +17,9 @@ const GeolocationSearch = ({ onLocationFound, className = '' }) => {
     setLoading(true);
     setError(null);
 
+    // Firefox's location provider is slower; give it more time
+    const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
@@ -46,7 +49,7 @@ const GeolocationSearch = ({ onLocationFound, className = '' }) => {
             break;
         }
       },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: isFirefox ? 15000 : 5000, maximumAge: 0 }
     );
   };
 

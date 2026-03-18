@@ -1,9 +1,9 @@
-import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+import { GoogleMap, LoadScript, AdvancedMarker } from "@react-google-maps/api";
 
-export default function CanchaMap({ lat, lng }){
+export default function CanchaMap({ lat, lng }) {
   const center = { lat: Number(lat) || 0, lng: Number(lng) || 0 };
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  
+
   // Si no hay API key configurada, mostrar mensaje informativo
   if (!apiKey || apiKey === "YOUR_GOOGLE_MAPS_API_KEY") {
     return (
@@ -16,7 +16,7 @@ export default function CanchaMap({ lat, lng }){
             </svg>
           </div>
           <p className="text-gray-600 dark:text-gray-400 text-sm">
-            Mapa no disponible<br/>
+            Mapa no disponible<br />
             <span className="text-xs">API key de Google Maps no configurada</span>
           </p>
           {lat && lng && (
@@ -28,11 +28,16 @@ export default function CanchaMap({ lat, lng }){
       </div>
     );
   }
-  
+
   return (
     <LoadScript googleMapsApiKey={apiKey}>
-      <GoogleMap mapContainerStyle={{ width:"100%", height:"400px" }} center={center} zoom={15}>
-        <Marker position={center} />
+      <GoogleMap
+        mapContainerStyle={{ width: "100%", height: "400px" }}
+        center={center}
+        zoom={15}
+        mapId={import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID"}
+      >
+        <AdvancedMarker position={center} />
       </GoogleMap>
     </LoadScript>
   )

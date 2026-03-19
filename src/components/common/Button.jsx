@@ -23,7 +23,7 @@ const Button = ({
   const variantClasses = {
     default: 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 focus:ring-gray-300 dark:focus:ring-gray-600',
     primary: 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white focus:ring-blue-500',
-    secondary: 'bg-gray-900/90 hover:bg-gray-900 text-white focus:ring-gray-700',
+    secondary: 'bg-gray-900 hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 text-white dark:text-blue-400 focus:ring-gray-700 shadow-sm transition-colors',
     success: 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500',
     danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
     warning: 'bg-amber-500 hover:bg-amber-600 text-white focus:ring-amber-400',

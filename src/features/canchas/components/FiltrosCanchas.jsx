@@ -1,104 +1,151 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { X, Calendar, Clock, DollarSign, MapPin, Star, Tag, Wifi, Droplets, Car, Coffee, LightbulbIcon, ShoppingBag, ArrowLeft } from 'lucide-react';
+import { X, Calendar, Clock, DollarSign, MapPin, Star, Tag, Wifi, Droplets, Car, Coffee, LightbulbIcon, Lightbulb, ShoppingBag, ArrowLeft, Archive } from 'lucide-react';
 import Input from '../../../components/common/Input';
 import Button from '../../../components/common/Button';
 import { Link } from 'react-router-dom';
 
 const FiltrosCanchas = ({
   filtros,
+  sedesBase = [],
   onFiltrosChange,
   onAplicarFiltros,
   onLimpiarFiltros,
   onCerrar,
   className = '',
 }) => {
+  // Local state to hold draft filters while user interacts with the modal
+  const [draft, setDraft] = useState(filtros);
+
+  // Sync draft if parent `filtros` change (e.g., cleared via chips)
+  useEffect(() => {
+    setDraft(filtros);
+  }, [filtros]);
+
+  const handleDraftChange = (changes) => {
+    setDraft(prev => ({ ...prev, ...changes }));
+  };
+
+  const handleLimpiar = () => {
+    setDraft({
+      ubicacion: "",
+      precioMin: 0,
+      precioMax: 5000,
+      tipoCancha: [],
+      fecha: "",
+      horario: [],
+      servicios: [],
+      calificacionMinima: 0,
+      radio: 10,
+      coordenadas: null,
+    });
+    onLimpiarFiltros();
+  };
   // Catálogos
-  const tiposCanchas = ["Fútbol 5", "Fútbol 7", "Fútbol 11", "Tenis", "Padel", "Basquet"];
-  const serviciosCatalogo = [
-    { id: "aparcamiento", nombre: "Aparcamiento", icon: <Car className="w-4 h-4" /> },
-    { id: "iluminacion", nombre: "Iluminación", icon: <LightbulbIcon className="w-4 h-4" /> },
-    { id: "vestuarios", nombre: "Vestuarios", icon: <ShoppingBag className="w-4 h-4" /> },
-    { id: "duchas", nombre: "Duchas", icon: <Droplets className="w-4 h-4" /> },
-    { id: "wifi", nombre: "WiFi", icon: <Wifi className="w-4 h-4" /> },
-    { id: "cafeteria", nombre: "Cafetería", icon: <Coffee className="w-4 h-4" /> },
-  ];
+  // Helper para asignar un ícono dinámico según el nombre del servicio
+  const getServiceIcon = (serviceName) => {
+    const name = serviceName.toLowerCase();
+    if (name.includes("aparcamiento") || name.includes("parqueadero") || name.includes("parking")) return Car;
+    if (name.includes("iluminación") || name.includes("luz")) return Lightbulb;
+    if (name.includes("vestuario") || name.includes("locker")) return Archive;
+    if (name.includes("ducha") || name.includes("agua")) return Droplets;
+    if (name.includes("wifi") || name.includes("internet")) return Wifi;
+    if (name.includes("cafetería") || name.includes("bar") || name.includes("comida") || name.includes("snack") || name.includes("kiosko")) return Coffee;
+    return Tag; // Default icon
+  };
+
+  const { tiposCancha, servicios } = useMemo(() => {
+    const tipos = new Set();
+    const servs = new Set();
+    
+    (sedesBase || []).forEach(sede => {
+       (sede.escenarios || []).forEach(esc => {
+          if (esc.tipoDeporte) tipos.add(esc.tipoDeporte);
+       });
+       if (sede.tipoCancha) tipos.add(sede.tipoCancha);
+       if (sede.tipoDeporte) tipos.add(sede.tipoDeporte);
+
+       if (Array.isArray(sede.servicios)) {
+          sede.servicios.forEach(s => servs.add(s));
+       }
+    });
+
+    return {
+       tiposCancha: Array.from(tipos).filter(Boolean).sort(),
+       servicios: Array.from(servs).filter(Boolean).sort().map(s => ({
+         id: s,
+         nombre: s, // Use the service name as both id and name
+         icon: getServiceIcon(s)
+       }))
+    };
+  }, [sedesBase]);
+
   const horarios = ["Mañana (6-12h)", "Tarde (12-18h)", "Noche (18-24h)"];
 
-  return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 ${className}`}>
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-2">
-          <Link to="/canchas" className="text-gray-600 hover:text-primary transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <h3 className="text-lg font-semibold">Filtros Avanzados</h3>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={onLimpiarFiltros}
-            className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 px-3 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            Limpiar filtros
-          </button>
-          <button
-            onClick={onCerrar}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            aria-label="Cerrar"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+  const getPillClasses = (isActive) => {
+    const base = "flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none select-none";
+    if (isActive) {
+      return `${base} bg-blue-600 text-white shadow-md shadow-blue-500/30 scale-[0.98]`;
+    }
+    return `${base} bg-gray-100 dark:bg-gray-700/80 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600`;
+  };
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  return (
+    <div className={`p-4 ${className}`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
         {/* Ubicación y radio */}
         <div>
-          <h4 className="font-medium mb-3 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-primary" />
+          <h4 className="font-medium mb-3 flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
+            <MapPin className="w-4 h-4 text-gray-500" />
             Ubicación
           </h4>
           <div className="space-y-3">
-            <Input
+            <input
+              type="text"
               placeholder="Barrio, ciudad o dirección"
-              value={filtros.ubicacion}
-              onChange={(e) => onFiltrosChange({ ubicacion: e.target.value })}
+              value={draft.ubicacion}
+              onChange={(e) => handleDraftChange({ ubicacion: e.target.value })}
+              className="w-full px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700/80 border-transparent rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-shadow"
             />
             <div>
               <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                Radio de búsqueda: {filtros.radio} km
+                Radio de búsqueda: {draft.radio} km
               </label>
               <input
                 type="range"
                 min="1"
-                max="50"
-                value={filtros.radio}
-                onChange={(e) => onFiltrosChange({ radio: parseInt(e.target.value) })}
-                className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                max="20"
+                value={draft.radio}
+                disabled={!draft.coordenadas}
+                onChange={(e) => handleDraftChange({ radio: parseInt(e.target.value) })}
+                className={`w-full accent-blue-600 ${!draft.coordenadas ? 'opacity-40 cursor-not-allowed mx-0' : ''}`}
               />
+              {!draft.coordenadas && (
+                 <p className="text-xs text-orange-500/90 font-medium mt-1 leading-tight">Activa tu ubicación GPS en la barra de búsqueda principal para usar el radio.</p>
+              )}
             </div>
           </div>
         </div>
         
         {/* Tipo de cancha */}
         <div>
-          <h4 className="font-medium mb-3 flex items-center gap-2">
-            <Tag className="w-4 h-4 text-primary" />
+          <h4 className="font-medium mb-3 flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
+            <Tag className="w-4 h-4 text-gray-500" />
             Tipo de cancha
           </h4>
           <div className="flex flex-wrap gap-2">
-            {tiposCanchas.map(tipo => (
+            {tiposCancha.map(tipo => (
               <button
                 key={tipo}
                 onClick={() => {
-                  const tipoCancha = [...filtros.tipoCancha];
+                  const tipoCancha = [...draft.tipoCancha];
                   if (tipoCancha.includes(tipo)) {
-                    onFiltrosChange({ tipoCancha: tipoCancha.filter(t => t !== tipo) });
+                    handleDraftChange({ tipoCancha: tipoCancha.filter(t => t !== tipo) });
                   } else {
-                    onFiltrosChange({ tipoCancha: [...tipoCancha, tipo] });
+                    handleDraftChange({ tipoCancha: [...tipoCancha, tipo] });
                   }
                 }}
-                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filtros.tipoCancha.includes(tipo) ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
+                className={getPillClasses(draft.tipoCancha.includes(tipo))}
               >
                 {tipo}
               </button>
@@ -108,22 +155,22 @@ const FiltrosCanchas = ({
         
         {/* Fecha */}
         <div>
-          <h4 className="font-medium mb-3 flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-primary" />
+          <h4 className="font-medium mb-3 flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
+            <Calendar className="w-4 h-4 text-gray-500" />
             Fecha
           </h4>
-          <Input
+          <input
             type="date"
-            value={filtros.fecha}
-            onChange={(e) => onFiltrosChange({ fecha: e.target.value })}
-            className="w-full"
+            value={draft.fecha}
+            onChange={(e) => handleDraftChange({ fecha: e.target.value })}
+            className="w-full px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700/80 border-transparent rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-shadow"
           />
         </div>
         
         {/* Horarios */}
         <div>
-          <h4 className="font-medium mb-3 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-primary" />
+          <h4 className="font-medium mb-3 flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
+            <Clock className="w-4 h-4 text-gray-500" />
             Horario
           </h4>
           <div className="flex flex-wrap gap-2">
@@ -131,14 +178,14 @@ const FiltrosCanchas = ({
               <button
                 key={horario}
                 onClick={() => {
-                  const horariosList = [...filtros.horario];
+                  const horariosList = [...draft.horario];
                   if (horariosList.includes(horario)) {
-                    onFiltrosChange({ horario: horariosList.filter(h => h !== horario) });
+                    handleDraftChange({ horario: horariosList.filter(h => h !== horario) });
                   } else {
-                    onFiltrosChange({ horario: [...horariosList, horario] });
+                    handleDraftChange({ horario: [...horariosList, horario] });
                   }
                 }}
-                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filtros.horario.includes(horario) ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
+                className={getPillClasses(draft.horario.includes(horario))}
               >
                 {horario}
               </button>
@@ -148,45 +195,48 @@ const FiltrosCanchas = ({
         
         {/* Servicios */}
         <div>
-          <h4 className="font-medium mb-3 flex items-center gap-2">
-            <ShoppingBag className="w-4 h-4 text-primary" />
+          <h4 className="font-medium mb-3 flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
+            <ShoppingBag className="w-4 h-4 text-gray-500" />
             Servicios
           </h4>
           <div className="flex flex-wrap gap-2">
-            {serviciosCatalogo.map(servicio => (
-              <button
-                key={servicio.id}
-                onClick={() => {
-                  const serviciosList = [...filtros.servicios];
-                  if (serviciosList.includes(servicio.nombre)) {
-                    onFiltrosChange({ servicios: serviciosList.filter(s => s !== servicio.nombre) });
-                  } else {
-                    onFiltrosChange({ servicios: [...serviciosList, servicio.nombre] });
-                  }
-                }}
-                className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium transition-colors ${filtros.servicios.includes(servicio.nombre) ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
-              >
-                {servicio.icon}
-                <span>{servicio.nombre}</span>
-              </button>
-            ))}
+            {servicios.map(servicio => {
+              const IconComponent = servicio.icon;
+              return (
+                <button
+                  key={servicio.id}
+                  onClick={() => {
+                    const serviciosList = [...draft.servicios];
+                    if (serviciosList.includes(servicio.nombre)) {
+                      handleDraftChange({ servicios: serviciosList.filter(s => s !== servicio.nombre) });
+                    } else {
+                      handleDraftChange({ servicios: [...serviciosList, servicio.nombre] });
+                    }
+                  }}
+                  className={getPillClasses(draft.servicios.includes(servicio.nombre))}
+                >
+                  <IconComponent className="w-4 h-4" />
+                  <span>{servicio.nombre}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
         
         {/* Calificación */}
         <div>
-          <h4 className="font-medium mb-3 flex items-center gap-2">
-            <Star className="w-4 h-4 text-primary" />
+          <h4 className="font-medium mb-3 flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
+            <Star className="w-4 h-4 text-gray-500" />
             Calificación mínima
           </h4>
           <div className="flex gap-2">
             {[0, 3, 4, 4.5].map(rating => (
               <button
                 key={rating}
-                onClick={() => onFiltrosChange({ calificacionMinima: rating })}
-                className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium transition-colors ${filtros.calificacionMinima === rating ? 'bg-yellow-400 text-yellow-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
+                onClick={() => handleDraftChange({ calificacionMinima: rating })}
+                className={getPillClasses(draft.calificacionMinima === rating)}
               >
-                <Star className="w-4 h-4" />
+                <Star className={`w-4 h-4 ${draft.calificacionMinima === rating ? 'fill-current' : ''}`} />
                 {rating > 0 ? `${rating}+` : 'Todas'}
               </button>
             ))}
@@ -195,41 +245,32 @@ const FiltrosCanchas = ({
 
         {/* Precio */}
         <div>
-          <h4 className="font-medium mb-3 flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-primary" />
+          <h4 className="font-medium mb-3 flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
+            <DollarSign className="w-4 h-4 text-gray-500" />
             Precio por hora
           </h4>
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Input
-                type="number"
-                placeholder="Mínimo"
-                value={filtros.precioMin}
-                onChange={(e) => onFiltrosChange({ precioMin: parseInt(e.target.value) || 0 })}
-                className="w-full"
-              />
-              <span className="text-gray-500 dark:text-gray-400">a</span>
-              <Input
-                type="number"
-                placeholder="Máximo"
-                value={filtros.precioMax}
-                onChange={(e) => onFiltrosChange({ precioMax: parseInt(e.target.value) || 0 })}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                Rango: ${filtros.precioMin} - ${filtros.precioMax}
-              </label>
-              <div className="relative pt-1">
-                <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200 dark:bg-gray-700">
-                  <div
-                    style={{
-                      width: `${(filtros.precioMax / 5000) * 100}%`,
-                    }}
-                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary"
-                  ></div>
-                </div>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-sm font-semibold">$</span>
+                <input
+                  type="number"
+                  placeholder="Mínimo"
+                  value={draft.precioMin === 0 ? '' : draft.precioMin}
+                  onChange={(e) => handleDraftChange({ precioMin: parseInt(e.target.value) || 0 })}
+                  className="w-full pl-8 pr-3 py-2 text-sm bg-gray-100 dark:bg-gray-700/80 border-transparent rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-shadow"
+                />
+              </div>
+              <span className="text-gray-400 font-medium">-</span>
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-sm font-semibold">$</span>
+                <input
+                  type="number"
+                  placeholder="Máximo"
+                  value={draft.precioMax}
+                  onChange={(e) => handleDraftChange({ precioMax: parseInt(e.target.value) || 0 })}
+                  className="w-full pl-8 pr-3 py-2 text-sm bg-gray-100 dark:bg-gray-700/80 border-transparent rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-shadow"
+                />
               </div>
             </div>
           </div>
@@ -237,19 +278,29 @@ const FiltrosCanchas = ({
       </div>
 
       {/* Botones de acción */}
-      <div className="mt-8 flex justify-end gap-3">
-        <Button
-          variant="secondary"
-          onClick={onCerrar}
+      <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/60 flex flex-col-reverse sm:flex-row justify-between items-center gap-4">
+        <button
+          onClick={handleLimpiar}
+          className="text-sm font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors py-1.5 px-2"
         >
-          Cancelar
-        </Button>
-        <Button
-          variant="primary"
-          onClick={onAplicarFiltros}
-        >
-          Aplicar filtros
-        </Button>
+          Limpiar configuración
+        </button>
+        <div className="flex w-full sm:w-auto gap-3">
+          <Button
+            variant="secondary"
+            onClick={onCerrar}
+            className="flex-1 sm:flex-none py-2"
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => onAplicarFiltros(draft)}
+            className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 px-6 py-2"
+          >
+            Aplicar 
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -268,6 +319,7 @@ FiltrosCanchas.propTypes = {
     calificacionMinima: PropTypes.number,
     coordenadas: PropTypes.object
   }).isRequired,
+  sedesBase: PropTypes.array,
   onFiltrosChange: PropTypes.func.isRequired,
   onAplicarFiltros: PropTypes.func.isRequired,
   onLimpiarFiltros: PropTypes.func.isRequired,

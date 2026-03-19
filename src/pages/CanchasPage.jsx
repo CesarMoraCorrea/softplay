@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 // import { useSearchParams, useNavigate } from "react-router-dom"; // Not needed for vista state
 import { useDispatch, useSelector } from "react-redux";
-import { Search, Filter, MapPin, Star, X, Map, List, Building2 } from "lucide-react";
+import { Search, Filter, MapPin, Star, X, Map, List, Building2, DollarSign, Calendar, Clock, Tag, Trash2, Radar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import CanchaCard from "../features/canchas/components/CanchaCard";
 import FiltrosCanchas from "../features/canchas/components/FiltrosCanchas";
@@ -16,6 +16,7 @@ import GoogleMapsView from "../components/GoogleMapsView";
 
 // Importamos la acción para obtener canchas del backend
 import { fetchCanchas } from "../redux/slices/canchasSlice";
+import api from "../api/axios";
 
 const CanchasPage = () => {
   const dispatch = useDispatch();
@@ -29,42 +30,100 @@ const CanchasPage = () => {
   const [vistaPrevia, setVistaPrevia] = useState("mapa"); // Track view before entering scenarios
   const [selectedSedeId, setSelectedSedeId] = useState(null);
   const [selectedSede, setSelectedSede] = useState(null); // Para guardar la sede seleccionada
+  const [rangoPreciosGlobal, setRangoPreciosGlobal] = useState({ min: 0, max: 200000 });
   const [filtros, setFiltros] = useState({
     ubicacion: "",
     precioMin: 0,
-    precioMax: 5000,
+    precioMax: 200000,
     tipoCancha: [],
     fecha: "",
     horario: [],
     servicios: [],
     calificacionMinima: 0,
-    radio: 10, // Radio de búsqueda en km
+    radio: 20, // Empieza siempre en el máximo (20 km)
     coordenadas: null, // Para almacenar lat/lng de la ubicación actual
   });
 
-  // Cargar canchas desde el backend al montar el componente y cada vez que cambie la búsqueda
-  // Solo cuando NO hay una sede seleccionada
-  useEffect(() => {
-    try {
-      let query = "";
+  const [sedesBase, setSedesBase] = useState([]);
 
-      if (selectedSedeId) {
-        // Si hay sede seleccionada, enviar parámetros para filtrar escenarios del backend
-        const params = new URLSearchParams();
-        params.set("view", "escenarios");
-        params.set("sedeId", selectedSedeId);
-        if (busqueda) params.set("q", busqueda);
-        query = params.toString();
-        dispatch(fetchCanchas(query));
-      } else if (!selectedSedeId) {
-        // Si no hay sede, buscar sedes por término general
-        query = busqueda ? `q=${encodeURIComponent(busqueda)}` : "";
-        dispatch(fetchCanchas(query));
-      }
-    } catch (err) {
-      setError(err.message || "Error al cargar las sedes");
+  useEffect(() => {
+    // Fetch base sedes initially to fuel the dynamic filters options
+    api.get("/sedes")
+      .then(res => {
+        const data = res.data;
+        setSedesBase(data);
+
+        // Compute global min/max price dynamically
+        let globalMin = Infinity;
+        let globalMax = 0;
+
+        data.forEach(sede => {
+          (sede.escenarios || []).forEach(esc => {
+            const p = Number(esc.precioPorHora);
+            if (p > 0 && p < globalMin) globalMin = p;
+            if (p > globalMax) globalMax = p;
+          });
+        });
+
+        if (globalMin === Infinity) globalMin = 0;
+        if (globalMax === 0) globalMax = 200000;
+
+        setRangoPreciosGlobal({ min: globalMin, max: globalMax });
+
+        // Autocompletar filtros actuales solo si no hay un min/max diferente ajustado por el host
+        setFiltros(prev => ({
+          ...prev,
+          precioMin: prev.precioMin === 0 ? globalMin : prev.precioMin,
+          precioMax: prev.precioMax === 200000 ? globalMax : prev.precioMax
+        }));
+      })
+      .catch(console.error);
+  }, []);
+
+  const fetchWithFilters = React.useCallback((currentFiltros, search, view, sedeId) => {
+    const params = new URLSearchParams();
+    if (search) params.set("q", search);
+    if (view) params.set("view", view);
+    if (sedeId) params.set("sedeId", sedeId);
+
+    if (currentFiltros.ubicacion) params.set("location", currentFiltros.ubicacion);
+
+    // Si los valores inscritos en los inputs reflejan los límites globales por defecto, los ignoramos 
+    // en la consulta (query) para que solo queden 'escritos' sin disparar el estado de filtrado.
+    if (currentFiltros.precioMin > 0 && currentFiltros.precioMin !== rangoPreciosGlobal.min) {
+      params.set("minPrice", String(currentFiltros.precioMin));
     }
-  }, [dispatch, busqueda, selectedSedeId]);
+    if (currentFiltros.precioMax > 0 && currentFiltros.precioMax !== rangoPreciosGlobal.max) {
+      params.set("maxPrice", String(currentFiltros.precioMax));
+    }
+
+    if (currentFiltros.tipoCancha.length) params.set("fieldType", currentFiltros.tipoCancha.join(","));
+    if (currentFiltros.fecha) params.set("date", currentFiltros.fecha);
+    if (currentFiltros.horario.length) params.set("timeSlot", currentFiltros.horario.join(","));
+    if (currentFiltros.servicios.length) params.set("services", currentFiltros.servicios.join(","));
+    if (currentFiltros.calificacionMinima > 0) params.set("minRating", String(currentFiltros.calificacionMinima));
+    if (currentFiltros.coordenadas) {
+      params.set("lat", String(currentFiltros.coordenadas.lat));
+      params.set("lng", String(currentFiltros.coordenadas.lng));
+      if (currentFiltros.radio && currentFiltros.radio !== 20) {
+        params.set("radius", String(currentFiltros.radio));
+      }
+    }
+    dispatch(fetchCanchas(params.toString())).catch(err => {
+      setError(err.message || "Error al cargar las sedes");
+    });
+  }, [dispatch, rangoPreciosGlobal]);
+
+  // Cargar canchas desde el backend cada vez que cambie la búsqueda o los filtros
+  useEffect(() => {
+    if (!selectedSedeId) {
+      // Si no hay sede seleccionada, buscar sedes aplicando filtros
+      fetchWithFilters(filtros, busqueda);
+    } else {
+      // Si hay sede seleccionada, buscar escenarios aplicando los mismos filtros
+      fetchWithFilters(filtros, busqueda, "escenarios", selectedSedeId);
+    }
+  }, [fetchWithFilters, filtros, busqueda, selectedSedeId]);
 
   useEffect(() => {
     if (!selectedSedeId || !selectedSede) return;
@@ -84,48 +143,22 @@ const CanchasPage = () => {
     setFiltros({ ...filtros, ...nuevosFiltros });
   };
 
-  const aplicarFiltros = () => {
-    // Construir parámetros de búsqueda para la API
-    const params = new URLSearchParams();
-
-    if (busqueda) params.set("q", busqueda);
-    if (filtros.ubicacion) params.set("location", filtros.ubicacion);
-    if (filtros.precioMin > 0) params.set("minPrice", String(filtros.precioMin));
-    if (filtros.precioMax < 5000) params.set("maxPrice", String(filtros.precioMax));
-    if (filtros.tipoCancha.length) params.set("fieldType", filtros.tipoCancha.join(","));
-    if (filtros.fecha) params.set("date", filtros.fecha);
-    if (filtros.horario.length) params.set("timeSlot", filtros.horario.join(","));
-    if (filtros.servicios.length) params.set("services", filtros.servicios.join(","));
-    if (filtros.calificacionMinima > 0) params.set("minRating", String(filtros.calificacionMinima));
-    if (filtros.radio) params.set("radius", String(filtros.radio));
-
-    // Agregar coordenadas si están disponibles
-    if (filtros.coordenadas) {
-      params.set("lat", String(filtros.coordenadas.lat));
-      params.set("lng", String(filtros.coordenadas.lng));
-    }
-
-    // Llamar a la API con los filtros
-    try {
-      dispatch(fetchCanchas(params.toString()));
-    } catch (err) {
-      setError(err.message || "Error al aplicar filtros");
-    }
-
+  const aplicarFiltros = (draftFiltros) => {
+    setFiltros(draftFiltros);
     setFiltrosAbiertos(false);
   };
 
   const limpiarFiltros = () => {
     setFiltros({
       ubicacion: "",
-      precioMin: 0,
-      precioMax: 5000,
+      precioMin: rangoPreciosGlobal.min,
+      precioMax: rangoPreciosGlobal.max,
       tipoCancha: [],
       fecha: "",
       horario: [],
       servicios: [],
       calificacionMinima: 0,
-      radio: 10,
+      radio: 20,
       coordenadas: null,
     });
   };
@@ -176,35 +209,53 @@ const CanchasPage = () => {
     }))
     : escenariosSeleccionados;
 
+  const hasActiveFilters =
+    filtros.ubicacion !== "" ||
+    (filtros.precioMin !== rangoPreciosGlobal.min && filtros.precioMin > 0) ||
+    (filtros.precioMax !== rangoPreciosGlobal.max && filtros.precioMax < 200000) ||
+    filtros.tipoCancha.length > 0 ||
+    filtros.calificacionMinima > 0 ||
+    filtros.fecha !== "" ||
+    filtros.horario.length > 0 ||
+    filtros.servicios.length > 0 ||
+    (filtros.coordenadas !== null && filtros.radio !== 20);
+
   return (
-    <div className="p-6">
+    <div className="px-4 sm:px-6 pb-6 pt-2 lg:pt-3">
       {/* Encabezado y búsqueda */}
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+      <div className="text-center mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">
           {selectedSede ? selectedSede.nombre : "Encuentra tu sede y escenario"}
         </h1>
-        <p className="text-gray-600 dark:text-gray-300">
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
           {selectedSede
             ? `${escenariosSeleccionados.length} escenarios disponibles`
             : `${sedes.length} sedes disponibles cerca de ti`}
         </p>
 
-        <div className="max-w-2xl mx-auto mt-4 flex flex-col gap-2">
-          <div className="flex gap-2 items-center">
+        <div className="w-full max-w-5xl mx-auto mt-4 mb-6 px-2 lg:px-0 flex flex-col xl:flex-row gap-3 items-center justify-between">
+          <div className="flex w-full xl:w-auto flex-1 gap-2 flex-wrap sm:flex-nowrap">
             <Input
-              placeholder={selectedSede ? "Buscar escenarios..." : "Buscar por nombre o ubicación..."}
+              placeholder={selectedSede ? "Buscar escenarios..." : "Buscador de canchas..."}
               value={busqueda}
               onChange={handleBusquedaChange}
               icon={<Search className="w-5 h-5 text-gray-400" />}
-              className="flex-1"
+              className="flex-1 min-w-[200px]"
             />
-            <Button
-              variant="secondary"
-              onClick={() => setFiltrosAbiertos(true)}
-              icon={<Filter className="w-5 h-5" />}
-            >
-              Filtros
-            </Button>
+            <div className="flex gap-2">
+              <GeolocationSearch onLocationFound={handleLocationFound} />
+              <Button
+                variant="secondary"
+                onClick={() => setFiltrosAbiertos(true)}
+                icon={<Filter className="w-5 h-5" />}
+                className="shrink-0"
+              >
+                Filtros
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex w-full xl:w-auto justify-center xl:justify-end">
 
             {/* Toggle premium tipo Segmented Control */}
             <div className="relative flex bg-gray-200/70 dark:bg-gray-800 rounded-xl p-1 shadow-inner h-11 items-center w-56 mx-auto sm:mx-0">
@@ -256,38 +307,46 @@ const CanchasPage = () => {
                   setSelectedSede(null);
                   setVistaActual(vistaPrevia);
                 }}
-                className="ml-2 text-sm"
+                className="ml-2 text-sm shrink-0"
               >
                 Volver
               </Button>
             )}
           </div>
-
-          {/* Componente de geolocalización */}
-          <GeolocationSearch onLocationFound={handleLocationFound} className="mt-2" />
-
-
         </div>
       </div>
 
       {/* Filtros aplicados */}
-      {Object.values(filtros).some((v) =>
-        Array.isArray(v) ? v.length > 0 : v !== "" && v !== 0 && v !== 5000
-      ) && (
-          <div className="flex flex-wrap gap-2">
+      {hasActiveFilters && (
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-8">
+          <div className="flex flex-wrap gap-2 flex-1">
             {filtros.ubicacion && (
-              <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full text-sm">
-                <MapPin className="w-4 h-4" />
+              <div className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600 transition-all">
+                <MapPin className="w-3.5 h-3.5 text-blue-500" />
                 {filtros.ubicacion}
-                <button onClick={() => handleFiltrosChange({ ubicacion: "" })}>
-                  <X className="w-4 h-4" />
+                <button onClick={() => handleFiltrosChange({ ubicacion: "" })} className="ml-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full p-0.5 transition-colors">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            {(filtros.precioMin !== rangoPreciosGlobal.min || filtros.precioMax !== rangoPreciosGlobal.max) && (
+              <div className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600 transition-all">
+                <DollarSign className="w-3.5 h-3.5 text-green-500" />
+                ${filtros.precioMin} - ${filtros.precioMax}
+                <button
+                  onClick={() =>
+                    handleFiltrosChange({ precioMin: rangoPreciosGlobal.min, precioMax: rangoPreciosGlobal.max })
+                  }
+                  className="ml-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full p-0.5 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
             {filtros.tipoCancha.map((tipo) => (
               <div
                 key={tipo}
-                className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full text-sm"
+                className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600 transition-all"
               >
                 {tipo}
                 <button
@@ -296,30 +355,91 @@ const CanchasPage = () => {
                       tipoCancha: filtros.tipoCancha.filter((t) => t !== tipo),
                     })
                   }
+                  className="ml-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full p-0.5 transition-colors"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             ))}
             {filtros.calificacionMinima > 0 && (
-              <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full text-sm">
-                <Star className="w-4 h-4 fill-current text-yellow-500" />
+              <div className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600 transition-all">
+                <Star className="w-3.5 h-3.5 fill-current text-yellow-500" />
                 {filtros.calificacionMinima}+
-                <button onClick={() => handleFiltrosChange({ calificacionMinima: 0 })}>
-                  <X className="w-4 h-4" />
+                <button onClick={() => handleFiltrosChange({ calificacionMinima: 0 })} className="ml-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full p-0.5 transition-colors">
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
-            {/* Más filtros aplicados aquí */}
-
-            <button
-              onClick={limpiarFiltros}
-              className="text-sm text-primary hover:text-primary-dark dark:hover:text-primary-light"
-            >
-              Limpiar todos
-            </button>
+            {filtros.fecha && (
+              <div className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600 transition-all">
+                <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+                {filtros.fecha}
+                <button onClick={() => handleFiltrosChange({ fecha: "" })} className="ml-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full p-0.5 transition-colors">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            {filtros.horario.map((hor) => (
+              <div
+                key={hor}
+                className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600 transition-all"
+              >
+                <Clock className="w-3.5 h-3.5 text-purple-500" />
+                {hor}
+                <button
+                  onClick={() =>
+                    handleFiltrosChange({
+                      horario: filtros.horario.filter((h) => h !== hor),
+                    })
+                  }
+                  className="ml-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full p-0.5 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+            {filtros.servicios.map((srv) => (
+              <div
+                key={srv}
+                className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600 transition-all"
+              >
+                <Tag className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                {srv}
+                <button
+                  onClick={() =>
+                    handleFiltrosChange({
+                      servicios: filtros.servicios.filter((s) => s !== srv),
+                    })
+                  }
+                  className="ml-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full p-0.5 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+            {filtros.coordenadas && filtros.radio && filtros.radio !== 20 && (
+              <div className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600 transition-all">
+                <Radar className="w-3.5 h-3.5 text-orange-500" />
+                Radio a {filtros.radio} km
+                <button
+                  onClick={() => handleFiltrosChange({ radio: 20 })}
+                  className="ml-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full p-0.5 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
-        )}
+
+          <button
+            onClick={limpiarFiltros}
+            className="inline-flex items-center shrink-0 gap-1.5 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm"
+          >
+            <Trash2 className="w-4 h-4" />
+            Limpiar todos
+          </button>
+        </div>
+      )}
 
       {/* Mensaje de error */}
       {error && (
@@ -436,10 +556,11 @@ const CanchasPage = () => {
         open={filtrosAbiertos}
         title="Filtros de búsqueda"
         onClose={() => setFiltrosAbiertos(false)}
-        size="lg"
+        size="xl"
       >
         <FiltrosCanchas
           filtros={filtros}
+          sedesBase={sedesBase}
           onFiltrosChange={handleFiltrosChange}
           onAplicarFiltros={aplicarFiltros}
           onLimpiarFiltros={limpiarFiltros}

@@ -156,12 +156,12 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, onVerEscenarios, userLoc
     return validAuto ? { lat: latAuto, lng: lngAuto } : null;
   }, [userLocation, autoUserLocation]);
 
-  // Configuración del mapa
+  // Configuración del mapa adaptativa
   const mapContainerStyle = {
     width: "100%",
-    height: "calc(100vh - 280px)",
-    borderRadius: "12px",
-    minHeight: "400px",
+    height: "calc(100vh - 260px)",
+    borderRadius: "16px",
+    minHeight: "450px",
   };
 
   // Centro del mapa - usar ubicación del usuario o centro de Cali, Colombia por defecto

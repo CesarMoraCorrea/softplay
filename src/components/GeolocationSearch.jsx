@@ -24,12 +24,12 @@ const GeolocationSearch = ({ onLocationFound, className = '' }) => {
       (position) => {
         const { latitude, longitude } = position.coords;
         setPosition({ lat: latitude, lng: longitude });
-        
+
         // Llamar al callback con la posición encontrada
         if (onLocationFound) {
           onLocationFound({ lat: latitude, lng: longitude });
         }
-        
+
         setLoading(false);
       },
       (error) => {
@@ -59,23 +59,28 @@ const GeolocationSearch = ({ onLocationFound, className = '' }) => {
         onClick={getCurrentLocation}
         variant="secondary"
         disabled={loading}
-        className="flex items-center gap-2"
+        className={`flex items-center justify-center gap-2 whitespace-nowrap px-3 sm:px-4 ${className}`}
+        title="Localizar sedes cerca de mi ubicación"
       >
         {loading ? (
           <>
             <Loader className="w-4 h-4 animate-spin" />
-            <span>Obteniendo ubicación...</span>
+            <span>Cargando...</span>
           </>
         ) : (
           <>
-            <MapPin className="w-4 h-4" />
-            <span>Usar mi ubicación actual</span>
+            <MapPin className="w-5 h-5" />
+            <span className="hidden sm:inline font-medium">Mi Ubicación</span>
           </>
         )}
       </Button>
 
       {error && (
-        <p className="text-red-500 text-sm mt-2">{error}</p>
+        <div className="absolute top-full mt-2 left-0 right-0 z-50">
+          <p className="bg-red-50 text-red-600 text-xs px-3 py-2 rounded-lg border border-red-200 shadow-lg truncate pointer-events-none">
+            {error}
+          </p>
+        </div>
       )}
     </div>
   );

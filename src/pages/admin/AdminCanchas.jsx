@@ -319,6 +319,39 @@ export default function AdminCanchas() {
     dispatch(fetchCanchas());
   }, [dispatch]);
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+      linkMpAccount(code);
+    }
+  }, []);
+
+  const linkMpAccount = async (code) => {
+    try {
+      await api.post('/mercadopago/link-account', {
+         code, 
+         redirectUri: window.location.origin + window.location.pathname 
+      });
+      alert('Cuenta de MercadoPago vinculada exitosamente. Ya puedes recibir pagos.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (e) {
+      console.error(e);
+      alert('Hubo un error al vincular la cuenta de MercadoPago.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  };
+
+  const handleMpRedirect = async () => {
+    try {
+      const redirectUri = window.location.origin + window.location.pathname;
+      const { data } = await api.get('/mercadopago/oauth-url?redirectUri=' + redirectUri);
+      window.location.href = data.url;
+    } catch (e) {
+      alert('Error obteniendo URL de vinculación con MercadoPago');
+    }
+  };
+
   const selectedSede = useMemo(() => {
     if (!selectedSedeId) return null;
     return sedes.find((s) => String(s._id) === String(selectedSedeId));
@@ -507,12 +540,21 @@ export default function AdminCanchas() {
             </div>
           </div>
           {isMasterView && (
-            <button
-              onClick={initCreateSede}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow hover:shadow-lg transition-all flex items-center justify-center gap-2 font-medium"
-            >
-              <Plus className="w-5 h-5" /> Registrar Nueva Sede
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleMpRedirect}
+                title="Vincular cuenta para recibir pagos"
+                className="bg-[#009ee3] hover:bg-[#008cc9] text-white px-5 py-2.5 rounded-xl shadow hover:shadow-lg transition-all flex items-center justify-center gap-2 font-medium"
+              >
+                Vincular Pagos (MP)
+              </button>
+              <button
+                onClick={initCreateSede}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow hover:shadow-lg transition-all flex items-center justify-center gap-2 font-medium"
+              >
+                <Plus className="w-5 h-5" /> Registrar Nueva Sede
+              </button>
+            </div>
           )}
         </div>
       </div>

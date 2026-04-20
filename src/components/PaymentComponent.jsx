@@ -179,6 +179,30 @@ export default function PaymentComponent({ reserva, onPaymentSuccess }) {
     }
   };
 
+  const handleMercadoPagoPayment = async () => {
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const { data } = await api.post("/payments/intent", {
+        reservaId: reserva._id,
+        paymentMethod: "mercadopago"
+      });
+
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        setMessage("No se pudo obtener el link de pago.");
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Error en pago MercadoPago:", error);
+      const errorMessage = error.response?.data?.message || "Error al procesar pago con MercadoPago";
+      setMessage(errorMessage);
+      setLoading(false);
+    }
+  };
+
   const handleTestPayment = async () => {
     setLoading(true);
     setMessage("");
@@ -218,6 +242,8 @@ export default function PaymentComponent({ reserva, onPaymentSuccess }) {
         return <CreditCard className="w-5 h-5" />;
       case "paypal":
         return <Wallet className="w-5 h-5" />;
+      case "mercadopago":
+        return <CreditCard className="w-5 h-5" color="#009ee3" />;
       case "test":
         return <TestTube className="w-5 h-5" />;
       default:
@@ -312,6 +338,34 @@ export default function PaymentComponent({ reserva, onPaymentSuccess }) {
               <>
                 <Wallet className="w-4 h-4" />
                 Pagar con PayPal
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {selectedMethod === "mercadopago" && (
+        <div className="space-y-4">
+          <div className="p-4 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg">
+            <p className="text-sm text-sky-800 dark:text-sky-300">
+              Serás redirigido a MercadoPago para completar el pago de forma segura.
+            </p>
+          </div>
+          <Button 
+            onClick={handleMercadoPagoPayment}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 text-white"
+            style={{ backgroundColor: '#009ee3' }}
+          >
+            {loading ? (
+              <>
+                <Loader className="w-4 h-4 animate-spin" />
+                Redirigiendo a MercadoPago...
+              </>
+            ) : (
+              <>
+                <Wallet className="w-4 h-4" />
+                Pagar con MercadoPago
               </>
             )}
           </Button>

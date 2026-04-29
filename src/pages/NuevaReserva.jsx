@@ -427,6 +427,7 @@ export default function NuevaReserva() {
         throw new Error("No hay reserva en el carrito.");
       }
 
+      // Si usamos mercadopago la dejamos como pendiente inicialmente y MP nos avisa
       const payload = tipoAccion === "pagado"
         ? { estadoPago: "pagado" }
         : { estadoPago: "pendiente" };
@@ -434,6 +435,25 @@ export default function NuevaReserva() {
       const { data: respuesta } = await api.patch(`/reservas/${bloqueoId}/estado`, payload);
 
       if (respuesta && respuesta._id) {
+        if (tipoAccion === "mercadopago") {
+          try {
+            const { data: mpData } = await api.post("/payments/intent", {
+              reservaId: respuesta._id,
+              paymentMethod: "mercadopago"
+            });
+            if (mpData.init_point) {
+              setBloqueoId(null); // Desvincular de limpieza para no borrar wehook reserve
+              window.location.href = mpData.init_point;
+              return; // Detenemos la vista para redireccionar
+            } else {
+              throw new Error("No se pudo obtener el link de pago de MercadoPago.");
+            }
+          } catch (mpErr) {
+            console.error("Error validando mercadopago:", mpErr);
+            throw new Error("Error iniciando MercadoPago: " + (mpErr.response?.data?.message || mpErr.message));
+          }
+        }
+
         setBloqueoId(null); // MUY IMPORTANTE: Desvincular de limpieza unload para que no lo borre al salir de la page
         setReserva(respuesta);
         setCurrentStep(3);
@@ -893,11 +913,12 @@ export default function NuevaReserva() {
                         <Clock className="w-5 h-5" />
                       </Button>
                       <Button
-                        onClick={() => crearReserva("pagado")}
+                        onClick={() => crearReserva("mercadopago")}
                         disabled={creatingReserva}
-                        className="py-4 font-bold text-lg w-full sm:flex-1 flex items-center justify-center gap-2 shadow-lg"
+                        className="py-4 font-bold text-lg w-full sm:flex-1 flex items-center justify-center gap-2 shadow-lg text-white"
+                        style={{ backgroundColor: '#009ee3' }}
                       >
-                        {creatingReserva ? "Procesando..." : "Confirmar (Simular Pago)"}
+                        {creatingReserva ? "Procesando..." : "Pagar con MercadoPago"}
                         <CreditCard className="w-6 h-6" />
                       </Button>
                     </div>

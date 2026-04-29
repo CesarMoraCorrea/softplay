@@ -103,55 +103,55 @@ export default function ReservaDetalle() {
           <div className="grid grid-cols-1 md:grid-cols-3">
 
             {/* PANEL PRINCIPAL - IZQUIERDA (2 columnas) */}
-            <div className="md:col-span-2 p-8 md:pr-12 md:pl-10 space-y-8 relative">
+            <div className="md:col-span-2 p-5 md:p-8 md:pr-12 md:pl-10 space-y-6 md:space-y-8 relative">
 
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h2 className="text-3xl font-black text-gray-900 dark:text-white leading-tight">
+                  <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white leading-tight">
                     {reserva.cancha?.nombre || "Cancha"}
                   </h2>
-                  <p className="text-sm font-medium text-gray-400 mt-2 uppercase tracking-widest">
+                  <p className="text-xs md:text-sm font-medium text-gray-400 mt-2 uppercase tracking-widest">
                     ID #{reserva._id.substring(reserva._id.length - 8)}
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <div className="flex gap-4 p-5 bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800/50">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-800/80 text-blue-600 dark:text-blue-300 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm mt-1">
-                    <Calendar className="w-6 h-6" />
+              <div className="space-y-4 md:space-y-6">
+                <div className="flex gap-4 p-4 md:p-5 bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800/50">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 dark:bg-blue-800/80 text-blue-600 dark:text-blue-300 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm mt-1">
+                    <Calendar className="w-5 h-5 md:w-6 md:h-6" />
                   </div>
                   <div>
-                    <p className="text-sm text-blue-600/80 dark:text-blue-300/80 font-semibold uppercase tracking-wide">Fecha de Juego</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100 capitalize">
+                    <p className="text-xs md:text-sm text-blue-600/80 dark:text-blue-300/80 font-semibold uppercase tracking-wide">Fecha de Juego</p>
+                    <p className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 capitalize">
                       {formatDate(reserva.fecha)}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-4 p-5 bg-purple-50/50 dark:bg-purple-900/20 rounded-2xl border border-purple-100 dark:border-purple-800/50">
-                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-800/80 text-purple-600 dark:text-purple-300 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm mt-1">
-                    <Clock className="w-6 h-6" />
+                <div className="flex gap-4 p-4 md:p-5 bg-purple-50/50 dark:bg-purple-900/20 rounded-2xl border border-purple-100 dark:border-purple-800/50">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-100 dark:bg-purple-800/80 text-purple-600 dark:text-purple-300 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm mt-1">
+                    <Clock className="w-5 h-5 md:w-6 md:h-6" />
                   </div>
                   <div>
-                    <p className="text-sm text-purple-600/80 dark:text-purple-300/80 font-semibold uppercase tracking-wide">Horario y Duración</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                    <p className="text-xs md:text-sm text-purple-600/80 dark:text-purple-300/80 font-semibold uppercase tracking-wide">Horario y Duración</p>
+                    <p className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">
                       {reserva.horaInicio} a {reserva.horaFin}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mt-1">
+                    <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium mt-1">
                       Turno de {reserva.horas} {reserva.horas === 1 ? "hora" : "horas"}
                     </p>
                   </div>
                 </div>
 
                 {reserva.cancha?.tipoCancha && (
-                  <div className="flex gap-4 p-5 bg-orange-50/50 dark:bg-orange-900/20 rounded-2xl border border-orange-100 dark:border-orange-800/50">
-                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-800/80 text-orange-600 dark:text-orange-300 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm mt-1">
-                      <Tag className="w-6 h-6" />
+                  <div className="flex gap-4 p-4 md:p-5 bg-orange-50/50 dark:bg-orange-900/20 rounded-2xl border border-orange-100 dark:border-orange-800/50">
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-orange-100 dark:bg-orange-800/80 text-orange-600 dark:text-orange-300 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm mt-1">
+                      <Tag className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
                     <div>
-                      <p className="text-sm text-orange-600/80 dark:text-orange-300/80 font-semibold uppercase tracking-wide">Deporte</p>
-                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                      <p className="text-xs md:text-sm text-orange-600/80 dark:text-orange-300/80 font-semibold uppercase tracking-wide">Deporte</p>
+                      <p className="text-base md:text-lg font-bold text-gray-900 dark:text-gray-100">
                         {reserva.cancha.tipoCancha}
                       </p>
                     </div>
@@ -161,7 +161,7 @@ export default function ReservaDetalle() {
             </div>
 
             {/* BARRA LATERAL (RECIBO) - DERECHA */}
-            <div className="bg-gray-50 dark:bg-gray-900 p-8 flex flex-col justify-between border-l border-dashed border-gray-300 dark:border-gray-700 relative">
+            <div className="bg-gray-50 dark:bg-gray-900 p-6 md:p-8 flex flex-col justify-between border-t md:border-t-0 md:border-l border-dashed border-gray-300 dark:border-gray-700 relative">
               {/* Semi-círculos de corte de "boleto" (Opcional - visual effect) */}
               <div className="hidden md:block absolute -left-4 top-1/2 w-8 h-8 rounded-full bg-slate-100 dark:bg-gray-800 -mt-4 shadow-inner" />
 

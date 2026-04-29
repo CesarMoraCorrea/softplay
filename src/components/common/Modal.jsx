@@ -12,15 +12,19 @@ const Modal = ({ open, title, children, onClose, actions, size = 'md' }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         role="button"
         aria-label="Cerrar"
         onClick={onClose}
       />
-      <div className={`relative w-full ${sizes[size]} mx-4 animate-fadeIn`} role="dialog" aria-modal="true">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+      <div className={`relative w-full ${sizes[size]} mx-0 sm:mx-4 mb-0 sm:mb-auto animate-slideUp sm:animate-fadeIn`} role="dialog" aria-modal="true">
+        <div className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl shadow-2xl border-t sm:border border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto custom-scroll">
+          {/* Handle bar for bottom sheet look on mobile */}
+          <div className="w-full flex justify-center pt-3 sm:hidden">
+            <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+          </div>
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
             <button

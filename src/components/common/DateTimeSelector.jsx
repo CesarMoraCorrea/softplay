@@ -261,9 +261,9 @@ export default function DateTimeSelector({ value, onChange, horasOcupadas = [], 
 
             {/* Encabezado de días - Compacto */}
             <div className="grid grid-cols-7 gap-0.5 mb-1 md:mb-2">
-              {["D", "L", "M", "M", "J", "V", "S"].map((day) => (
+              {["D", "L", "M", "M", "J", "V", "S"].map((day, idx) => (
                 <div
-                  key={day}
+                  key={`${day}-${idx}`}
                   className="text-center text-xs font-bold text-gray-600 dark:text-gray-400 py-1 md:py-2"
                 >
                   {day}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { Calendar, Clock, MapPin, Users, Info, ChevronLeft, ChevronRight, X, CreditCard, AlertCircle, ArrowRight, CheckCircle, Check, Tag, DollarSign } from "lucide-react";
@@ -184,6 +184,7 @@ export default function NuevaReserva() {
   const [currentStep, setCurrentStep] = useState(1);
   const [horasOcupadas, setHorasOcupadas] = useState([]);
   const [bloqueoId, setBloqueoId] = useState(null);
+  const isConfirmedRef = useRef(false);
 
   const normalizeId = (value) => {
     if (!value) return "";
@@ -306,7 +307,7 @@ export default function NuevaReserva() {
   // Nuevo Effect: Liberar reserva si el usuario cierra la ventana o se va de la página
   useEffect(() => {
     const handleUnload = () => {
-      if (bloqueoId) {
+      if (bloqueoId && !isConfirmedRef.current) {
         // En un hook unload, navigator.sendBeacon o fetch con keepalive son mejores que axios
         const origin = window.location.origin.includes('localhost:5173') ? 'http://localhost:5000/api' : '/api';
         const url = `${origin}/reservas/${bloqueoId}`;
@@ -442,6 +443,7 @@ export default function NuevaReserva() {
               paymentMethod: "mercadopago"
             });
             if (mpData.init_point) {
+              isConfirmedRef.current = true;
               setBloqueoId(null); // Desvincular de limpieza para no borrar wehook reserve
               window.location.href = mpData.init_point;
               return; // Detenemos la vista para redireccionar
@@ -454,6 +456,7 @@ export default function NuevaReserva() {
           }
         }
 
+        isConfirmedRef.current = true;
         setBloqueoId(null); // MUY IMPORTANTE: Desvincular de limpieza unload para que no lo borre al salir de la page
         setReserva(respuesta);
         setCurrentStep(3);
@@ -530,7 +533,7 @@ export default function NuevaReserva() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Panel Izquierdo - Info del Escenario (Solo en Paso 1) */}
             {currentStep === 1 && (
-              <div className="lg:col-span-1 space-y-6">
+              <div className="lg:col-span-1 space-y-6 order-2 lg:order-1">
                 {/* Card del Escenario */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
                   {/* Galería de imágenes */}
@@ -609,7 +612,7 @@ export default function NuevaReserva() {
             )}
 
             {/* Panel Derecho - Formulario de Reserva */}
-            <div className={`transition-all duration-300 ${currentStep === 1 ? 'lg:col-span-2' : 'lg:col-span-3 max-w-5xl mx-auto w-full'}`}>
+            <div className={`transition-all duration-300 order-1 lg:order-2 ${currentStep === 1 ? 'lg:col-span-2' : 'lg:col-span-3 max-w-5xl mx-auto w-full'}`}>
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-700">
                 {currentStep === 1 && (
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
@@ -759,7 +762,7 @@ export default function NuevaReserva() {
 
 
                     {/* Resumen de Reserva y Costo */}
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border-2 border-blue-200 dark:border-blue-800 transition-all duration-300">
+                    <div className="hidden sm:block bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border-2 border-blue-200 dark:border-blue-800 transition-all duration-300">
                       <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
                         <Check className="w-5 h-5 text-green-500" />
                         Resumen de tu Selección
@@ -830,10 +833,15 @@ export default function NuevaReserva() {
                     <Button
                       onClick={handleContinueToReview}
                       disabled={!fecha || !horas || (fecha && !fecha.includes("T")) || (fecha && fecha.split("T")[1] === "00:00")}
-                      className="w-full py-4 text-lg font-semibold flex items-center justify-center gap-2"
+                      className="w-full py-4 text-base sm:text-lg font-semibold flex items-center justify-center gap-2 sticky bottom-4 z-10 shadow-xl sm:static sm:shadow-none"
                       size="lg"
                     >
-                      Continuar a Revisión
+                      <span className="sm:hidden">
+                        Continuar (${calcularTotal().toLocaleString("es-AR")})
+                      </span>
+                      <span className="hidden sm:inline">
+                        Continuar a Revisión
+                      </span>
                       <ArrowRight className="w-5 h-5" />
                     </Button>
                   </div>
@@ -841,35 +849,35 @@ export default function NuevaReserva() {
 
                 {/* STEP 2: Revisión y Pago Simulado */}
                 {currentStep === 2 && (
-                  <div className="space-y-8 animate-fadeIn">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6 md:p-8 border border-blue-100 dark:border-blue-800 text-center">
-                      <CheckCircle className="w-16 h-16 text-blue-500 mx-auto mb-4" />
-                      <h3 className="text-2xl font-bold text-blue-900 dark:text-blue-100 mb-2">Detalles de Reserva</h3>
-                      <p className="text-blue-700 dark:text-blue-300 max-w-md mx-auto">
+                  <div className="space-y-4 md:space-y-8 animate-fadeIn">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-3 md:p-8 border border-blue-100 dark:border-blue-800 text-center">
+                      <CheckCircle className="w-8 h-8 md:w-16 md:h-16 text-blue-500 mx-auto mb-2 md:mb-4" />
+                      <h3 className="text-lg md:text-2xl font-bold text-blue-900 dark:text-blue-100 mb-1">Detalles de Reserva</h3>
+                      <p className="text-xs md:text-base text-blue-700 dark:text-blue-300 max-w-md mx-auto hidden sm:block">
                         Revisa tu selección. En este momento tu cancha se encuentra bloqueada a tu nombre para que nadie más la tome mientras finalizas.
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Sede</p>
-                        <p className="font-semibold text-gray-900 dark:text-white text-lg line-clamp-2">{sede?.nombre || cancha?.sedeId?.nombre || "No especificada"}</p>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 md:p-5 border border-gray-100 dark:border-gray-700">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Sede</p>
+                        <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-lg line-clamp-2">{sede?.nombre || cancha?.sedeId?.nombre || "No especificada"}</p>
                       </div>
-                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Escenario</p>
-                        <p className="font-semibold text-gray-900 dark:text-white text-lg line-clamp-2">
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 md:p-5 border border-gray-100 dark:border-gray-700">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Escenario</p>
+                        <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-lg line-clamp-1">
                           {cancha?.nombre?.includes("-") ? cancha.nombre.split("-").pop().trim() : cancha?.nombre}
                         </p>
                       </div>
-                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Día Reservado</p>
-                        <p className="font-semibold text-gray-900 dark:text-white text-base lg:text-lg leading-tight">
-                          {fecha ? new Date(fecha.split("T")[0] + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", year: "numeric", month: "long", day: "numeric" }) : ""}
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 md:p-5 border border-gray-100 dark:border-gray-700">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Día</p>
+                        <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-lg leading-tight capitalize">
+                          {fecha ? new Date(fecha.split("T")[0] + "T00:00:00").toLocaleDateString("es-AR", { weekday: "short", month: "short", day: "numeric" }) : ""}
                         </p>
                       </div>
-                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Hora y Duración</p>
-                        <p className="font-semibold text-gray-900 dark:text-white text-lg">
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 md:p-5 border border-gray-100 dark:border-gray-700">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Hora</p>
+                        <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-lg">
                           {fecha && fecha.includes("T") ? (
                             (() => {
                               const validStartTime = fecha.split("T")[1];
@@ -877,49 +885,47 @@ export default function NuevaReserva() {
                               const endH = h + Math.floor(horas);
                               const endM = m + (horas % 1) * 60;
                               const endString = `${endH.toString().padStart(2, '0')}:${endM === 0 ? '00' : '30'}`;
-                              return `${validStartTime} hasta ${endString} (${horas}h)`;
+                              return `${validStartTime}-${endString}`;
                             })()
                           ) : ""}
                         </p>
                       </div>
 
-                      <div className="col-span-1 sm:col-span-2 lg:col-span-4 bg-gradient-to-br from-primary/10 to-blue-500/10 dark:from-primary/20 dark:to-blue-500/20 rounded-xl p-6 border border-primary/20 flex flex-col sm:flex-row justify-between items-center mt-2">
-                        <div className="text-center sm:text-left mb-2 sm:mb-0">
-                          <p className="text-sm text-primary mb-1 font-medium">Monto Total a Pagar / Pendiente</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Las tarifas en sitio pueden variar si dejas el monto pendiente.</p>
+                      <div className="col-span-2 lg:col-span-4 bg-gradient-to-br from-primary/10 to-blue-500/10 dark:from-primary/20 dark:to-blue-500/20 rounded-xl p-4 md:p-6 border border-primary/20 flex flex-row justify-between items-center mt-1">
+                        <div className="text-left">
+                          <p className="text-xs sm:text-sm text-primary font-medium">Monto Total</p>
                         </div>
-                        <p className="font-bold text-primary text-4xl">
+                        <p className="font-bold text-primary text-2xl md:text-4xl">
                           ${calcularTotal().toLocaleString("es-AR")}
                         </p>
                       </div>
                     </div>
 
                     {/* Botonera Step 2 */}
-                    <div className="flex flex-col sm:flex-row gap-4 pt-6 mt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 md:gap-4 pt-3 md:pt-6 mt-2 border-t border-gray-200 dark:border-gray-700">
                       <Button
                         onClick={() => setCurrentStep(1)}
                         disabled={creatingReserva}
                         variant="outline"
-                        className="py-4 font-semibold w-full sm:w-1/4"
+                        className="py-2 md:py-4 font-semibold text-sm md:text-base w-full sm:w-1/4"
                       >
-                        Volver atrás
+                        Atrás
                       </Button>
                       <Button
                         onClick={() => crearReserva("pendiente")}
                         disabled={creatingReserva}
-                        className="py-4 font-bold text-lg w-full sm:w-1/3 bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-600 dark:hover:bg-yellow-700 flex items-center justify-center gap-2"
+                        className="py-2 md:py-4 font-bold text-sm md:text-lg w-full sm:w-1/3 bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-600 dark:hover:bg-yellow-700 flex items-center justify-center gap-1 md:gap-2"
                       >
-                        {creatingReserva ? "..." : "Reservar (Pendiente)"}
-                        <Clock className="w-5 h-5" />
+                        {creatingReserva ? "..." : "Reservar"}
                       </Button>
                       <Button
                         onClick={() => crearReserva("mercadopago")}
                         disabled={creatingReserva}
-                        className="py-4 font-bold text-lg w-full sm:flex-1 flex items-center justify-center gap-2 shadow-lg text-white"
+                        className="col-span-2 py-3 md:py-4 font-bold text-sm md:text-lg w-full sm:flex-1 flex items-center justify-center gap-1 md:gap-2 shadow-lg text-white"
                         style={{ backgroundColor: '#009ee3' }}
                       >
-                        {creatingReserva ? "Procesando..." : "Pagar con MercadoPago"}
-                        <CreditCard className="w-6 h-6" />
+                        {creatingReserva ? "Procesando..." : "MercadoPago"}
+                        <CreditCard className="w-4 h-4 md:w-6 md:h-6" />
                       </Button>
                     </div>
                   </div>
@@ -930,84 +936,86 @@ export default function NuevaReserva() {
         ) : (
           /* Success Screen */
           <div className="max-w-2xl mx-auto">
-            <div className={`rounded-2xl shadow-xl p-12 text-center border-2 ${reserva?.estadoPago === "pagado"
+            <div className={`rounded-2xl shadow-xl p-4 md:p-12 text-center border-2 ${reserva?.estadoPago === "pagado"
               ? "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800"
               : "bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-yellow-200 dark:border-yellow-800"
               }`}>
 
-              <div className="flex justify-center mb-12">
+              <div className="flex justify-center mb-4 md:mb-8">
                 <div className="relative">
                   {reserva?.estadoPago === "pagado" ? (
                     <>
                       <div className="absolute inset-0 bg-green-400 rounded-full opacity-20 animate-pulse scale-150"></div>
-                      <div className="relative bg-green-100 dark:bg-green-900/40 p-6 rounded-full">
-                        <CheckCircle className="w-16 h-16 text-green-600 dark:text-green-400" />
+                      <div className="relative bg-green-100 dark:bg-green-900/40 p-3 md:p-6 rounded-full">
+                        <CheckCircle className="w-10 h-10 md:w-16 md:h-16 text-green-600 dark:text-green-400" />
                       </div>
                     </>
                   ) : (
                     <>
                       <div className="absolute inset-0 bg-yellow-400 rounded-full opacity-20 animate-pulse scale-150"></div>
-                      <div className="relative bg-yellow-100 dark:bg-yellow-900/40 p-6 rounded-full">
-                        <Clock className="w-16 h-16 text-yellow-600 dark:text-yellow-400" />
+                      <div className="relative bg-yellow-100 dark:bg-yellow-900/40 p-3 md:p-6 rounded-full">
+                        <Clock className="w-10 h-10 md:w-16 md:h-16 text-yellow-600 dark:text-yellow-400" />
                       </div>
                     </>
                   )}
                 </div>
               </div>
 
-              <h3 className={`text-4xl font-bold mb-3 mt-4 ${reserva?.estadoPago === "pagado" ? "text-green-900 dark:text-green-200" : "text-yellow-900 dark:text-yellow-200"}`}>
-                {reserva?.estadoPago === "pagado" ? "¡Pago Simulado Exitoso!" : "¡Reserva Separada!"}
+              <h3 className={`text-2xl md:text-4xl font-bold mb-2 md:mb-3 mt-2 md:mt-4 ${reserva?.estadoPago === "pagado" ? "text-green-900 dark:text-green-200" : "text-yellow-900 dark:text-yellow-200"}`}>
+                {reserva?.estadoPago === "pagado" ? "¡Pago Exitoso!" : "¡Reserva Separada!"}
               </h3>
-              <p className={`text-lg mb-8 max-w-md mx-auto ${reserva?.estadoPago === "pagado" ? "text-green-700 dark:text-green-300" : "text-yellow-800 dark:text-yellow-300"}`}>
+              <p className={`text-sm md:text-lg mb-4 md:mb-8 max-w-md mx-auto ${reserva?.estadoPago === "pagado" ? "text-green-700 dark:text-green-300" : "text-yellow-800 dark:text-yellow-300"}`}>
                 {reserva?.estadoPago === "pagado"
                   ? "Tu pago simulado ha sido procesado y tienes tu cancha garantizada al 100%."
-                  : "Tu reserva fue aislada exitosamente y quedó en estado pendiente. Por favor acércate a la sede puntualmente para realizar tu pago."}
+                  : "Tu reserva fue aislada. Por favor acércate a la sede puntualmente para tu pago."}
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Escenario Elegido</p>
-                  <p className="font-semibold text-gray-900 dark:text-white text-sm line-clamp-1">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-8">
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-2 md:p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
+                  <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-0.5">Escenario Elegido</p>
+                  <p className="font-semibold text-gray-900 dark:text-white text-xs md:text-sm line-clamp-1">
                     {cancha?.nombre?.includes("-") ? cancha.nombre.split("-").pop().trim() : cancha?.nombre}
                   </p>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Estado de Pago</p>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-2 md:p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
+                  <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-0.5">Estado</p>
                   {reserva?.estadoPago === "pagado" ? (
-                    <p className="font-bold text-green-600 dark:text-green-400">✅ Pagado</p>
+                    <p className="font-bold text-green-600 dark:text-green-400 text-xs md:text-base">✅ Pagado</p>
                   ) : (
-                    <p className="font-bold text-yellow-600 dark:text-yellow-400">⏳ Pendiente</p>
+                    <p className="font-bold text-yellow-600 dark:text-yellow-400 text-xs md:text-base">⏳ Pendiente</p>
                   )}
                 </div>
-                <div className="bg-gradient-to-br from-primary/10 to-blue-100/10 dark:from-primary/20 dark:to-blue-900/20 rounded-xl p-4 border border-primary/30 shadow-sm">
-                  <p className="text-xs text-primary mb-1">{reserva?.estadoPago === "pagado" ? "Total Pagado" : "Total a Pagar en Sitio"}</p>
-                  <p className="font-bold text-primary text-lg">
+                <div className="col-span-2 md:col-span-1 bg-gradient-to-br from-primary/10 to-blue-100/10 dark:from-primary/20 dark:to-blue-900/20 rounded-xl p-3 md:p-4 border border-primary/30 shadow-sm">
+                  <p className="text-xs text-primary mb-0.5">{reserva?.estadoPago === "pagado" ? "Total Pagado" : "A Pagar en Sitio"}</p>
+                  <p className="font-bold text-primary text-xl md:text-lg">
                     ${calcularTotal().toLocaleString("es-AR")}
                   </p>
                 </div>
               </div>
 
-              <div className="bg-gray-50 dark:bg-gray-800 border-l-4 border-gray-400 rounded-lg p-4 mb-8 text-left">
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  <span className="font-semibold">🎟️ Número de Ticket:</span>{" "}
+              <div className="bg-gray-50 dark:bg-gray-800 border-l-4 border-gray-400 rounded-lg p-3 md:p-4 mb-4 md:mb-8 text-left">
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
+                  <span className="font-semibold">🎟️ Ticket:</span>{" "}
                   <span className="font-mono font-bold text-gray-900 dark:text-white">{reserva?._id?.slice(-8).toUpperCase()}</span>
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="grid grid-cols-2 gap-2 md:flex md:flex-row md:gap-4">
                 <Button
                   onClick={handleContinue}
-                  className="flex-1 py-3 text-base flex items-center justify-center gap-2"
+                  className="py-2 md:py-3 text-xs md:text-base flex items-center justify-center gap-1 md:gap-2"
                 >
-                  <CheckCircle className="w-5 h-5" />
-                  Ver Mis Reservas
+                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="hidden sm:inline">Ver Mis Reservas</span>
+                  <span className="sm:hidden">Ver Reservas</span>
                 </Button>
                 <Button
                   onClick={handleFinish}
                   variant="outline"
-                  className="flex-1 py-3 text-base"
+                  className="py-2 md:py-3 text-xs md:text-base"
                 >
-                  Buscar Más Escenarios
+                  <span className="hidden sm:inline">Buscar Más Escenarios</span>
+                  <span className="sm:hidden">Buscar Más</span>
                 </Button>
               </div>
             </div>

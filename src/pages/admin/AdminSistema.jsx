@@ -118,71 +118,94 @@ export default function AdminSistema() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-          Panel de Administración
-        </h1>
-        <Link to="/canchas">
-          <Button variant="outline" className="flex items-center gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Volver a Canchas
-          </Button>
-        </Link>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12">
+      {/* Header General Estilo Tarjeta Redondeada */}
+      <div className="max-w-7xl mx-auto px-6 pt-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 dark:bg-blue-900/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+          
+          <div className="flex gap-4 items-center relative z-10">
+            <Link
+              to="/canchas"
+              className="p-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-full text-gray-600 dark:text-gray-300 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+                Panel de Administración
+              </h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Administra usuarios, reportes y configuración del sistema
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Tabs de navegación */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
-        <button
-          onClick={() => setActiveTab("usuarios")}
-          className={`px-4 py-2 flex items-center gap-2 ${
-            activeTab === "usuarios"
-              ? "border-b-2 border-primary text-primary"
-              : "text-gray-600 dark:text-gray-400"
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          Usuarios
-        </button>
-        <button
-          onClick={() => setActiveTab("reportes")}
-          className={`px-4 py-2 flex items-center gap-2 ${
-            activeTab === "reportes"
-              ? "border-b-2 border-primary text-primary"
-              : "text-gray-600 dark:text-gray-400"
-          }`}
-        >
-          <FileText className="w-4 h-4" />
-          Reportes
-        </button>
-        <button
-          onClick={() => setActiveTab("auditoria")}
-          className={`px-4 py-2 flex items-center gap-2 ${
-            activeTab === "auditoria"
-              ? "border-b-2 border-primary text-primary"
-              : "text-gray-600 dark:text-gray-400"
-          }`}
-        >
-          <Activity className="w-4 h-4" />
-          Auditoría
-        </button>
-        <button
-          onClick={() => setActiveTab("configuracion")}
-          className={`px-4 py-2 flex items-center gap-2 ${
-            activeTab === "configuracion"
-              ? "border-b-2 border-primary text-primary"
-              : "text-gray-600 dark:text-gray-400"
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-          Configuración
-        </button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-6">
+
+      {/* Tabs de navegación con indicador de scroll en móvil */}
+      <div className="relative mb-6">
+        <div className="flex overflow-x-auto whitespace-nowrap border-b border-gray-200 dark:border-gray-700 pb-1 pr-12 sm:pr-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <button
+            onClick={() => setActiveTab("usuarios")}
+            className={`px-4 py-2 flex items-center gap-2 flex-shrink-0 transition-colors ${
+              activeTab === "usuarios"
+                ? "border-b-2 border-primary text-primary"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Usuarios
+          </button>
+          <button
+            onClick={() => setActiveTab("reportes")}
+            className={`px-4 py-2 flex items-center gap-2 flex-shrink-0 transition-colors ${
+              activeTab === "reportes"
+                ? "border-b-2 border-primary text-primary"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            Reportes
+          </button>
+          <button
+            onClick={() => setActiveTab("auditoria")}
+            className={`px-4 py-2 flex items-center gap-2 flex-shrink-0 transition-colors ${
+              activeTab === "auditoria"
+                ? "border-b-2 border-primary text-primary"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            }`}
+          >
+            <Activity className="w-4 h-4" />
+            Auditoría
+          </button>
+          <button
+            onClick={() => setActiveTab("configuracion")}
+            className={`px-4 py-2 flex items-center gap-2 flex-shrink-0 transition-colors ${
+              activeTab === "configuracion"
+                ? "border-b-2 border-primary text-primary"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            Configuración
+          </button>
+        </div>
+        
+        {/* Indicador visual de que hay más contenido (flecha animada) */}
+        <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-gray-50 dark:from-gray-900 to-transparent pointer-events-none sm:hidden flex justify-end items-center pr-1 pb-1">
+          <div className="bg-white/90 dark:bg-gray-800/90 rounded-full p-1 shadow-sm border border-gray-200 dark:border-gray-700 text-primary animate-pulse">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg>
+          </div>
+        </div>
       </div>
 
       {/* Contenido según la pestaña activa */}
       {activeTab === "usuarios" && (
         <div>
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
                 Gestión de Usuarios
@@ -191,23 +214,24 @@ export default function AdminSistema() {
                 Administra los usuarios del sistema
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="relative w-64">
+            <div className="flex w-full lg:w-auto items-center gap-3">
+              <div className="relative flex-1 lg:w-64">
                 <Input
                   type="text"
                   placeholder="Buscar usuarios..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 w-full"
                 />
                 <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               </div>
               <Button
+                variant="primary"
                 onClick={() => setShowUserForm(true)}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                className="flex items-center justify-center gap-2 flex-shrink-0"
               >
                 <UserPlus className="w-4 h-4" />
-                Nuevo Usuario
+                <span className="hidden sm:inline">Nuevo Usuario</span>
               </Button>
             </div>
           </div>
@@ -351,7 +375,63 @@ export default function AdminSistema() {
             </div>
           ) : (
             <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-md rounded-xl border border-gray-200 dark:border-gray-700">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              {/* Vista Móvil (Cards) */}
+              <div className="block md:hidden">
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {filteredUsers.map((user) => (
+                    <div key={user._id} className="p-4 space-y-3 hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-sm font-bold text-gray-900 dark:text-white">{user.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-300">{user.email}</div>
+                        </div>
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            user.activo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {user.activo ? "Activo" : "Inactivo"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            user.role === "admin"
+                              ? "bg-purple-100 text-purple-800"
+                              : user.role === "propietario"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-green-100 text-green-800"
+                          }`}
+                        >
+                          {user.role}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleToggleUserStatus(user._id)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                              user.activo
+                                ? "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+                                : "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                            }`}
+                          >
+                            {user.activo ? "🔒" : "✅"}
+                          </button>
+                          <button
+                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all duration-200 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
+                            onClick={() => handleEditUser(user)}
+                            title="Editar usuario"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Vista Desktop (Tabla) */}
+              <table className="hidden md:table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th
@@ -497,7 +577,7 @@ export default function AdminSistema() {
             Registro de actividades y cambios en el sistema.
           </p>
 
-          <div className="overflow-hidden shadow-md rounded-xl border border-gray-200 dark:border-gray-700">
+          <div className="overflow-x-auto shadow-md rounded-xl border border-gray-200 dark:border-gray-700">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
@@ -648,6 +728,7 @@ export default function AdminSistema() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

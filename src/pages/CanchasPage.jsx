@@ -233,29 +233,33 @@ const CanchasPage = () => {
             : `${sedes.length} sedes disponibles cerca de ti`}
         </p>
 
-        <div className="w-full max-w-5xl mx-auto mt-4 mb-6 px-2 lg:px-0 flex flex-col xl:flex-row gap-3 items-center justify-between">
-          <div className="flex w-full xl:w-auto flex-1 gap-2 flex-wrap sm:flex-nowrap">
-            <Input
-              placeholder={selectedSede ? "Buscar escenarios..." : "Buscador de canchas..."}
-              value={busqueda}
-              onChange={handleBusquedaChange}
-              icon={<Search className="w-5 h-5 text-gray-400" />}
-              className="flex-1 min-w-[200px]"
-            />
-            <div className="flex gap-2">
-              <GeolocationSearch onLocationFound={handleLocationFound} />
+        <div className="w-full max-w-5xl mx-auto mt-4 mb-6 px-2 lg:px-0 flex flex-col lg:flex-row gap-4 items-center justify-between">
+          <div className="flex w-full lg:w-auto flex-1 flex-col sm:flex-row gap-3">
+            <div className="w-full flex-1">
+              <Input
+                placeholder={selectedSede ? "Buscar escenarios..." : "Buscador de canchas..."}
+                value={busqueda}
+                onChange={handleBusquedaChange}
+                icon={<Search className="w-5 h-5 text-gray-400" />}
+                className="w-full"
+              />
+            </div>
+            <div className="flex justify-center gap-3 w-full sm:w-auto">
+              <div className="flex-shrink-0">
+                <GeolocationSearch onLocationFound={handleLocationFound} />
+              </div>
               <Button
                 variant="secondary"
                 onClick={() => setFiltrosAbiertos(true)}
                 icon={<Filter className="w-5 h-5" />}
-                className="shrink-0"
+                className="flex-1 sm:flex-none justify-center"
               >
                 Filtros
               </Button>
             </div>
           </div>
 
-          <div className="flex w-full xl:w-auto justify-center xl:justify-end">
+          <div className="flex w-full lg:w-auto justify-center lg:justify-end">
 
             {/* Toggle premium tipo Segmented Control */}
             <div className="relative flex bg-gray-200/70 dark:bg-gray-800 rounded-xl p-1 shadow-inner h-11 items-center w-56 mx-auto sm:mx-0">

@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// En local o a través de proxys, se usa ruta relativa /api de forma mandatoria.
-const baseURL = "/api";
+// Usa la variable de entorno en producción (Vercel) o el proxy local "/api" en desarrollo
+const baseURL = import.meta.env.VITE_API_URL || "/api";
 
 const api = axios.create({
   baseURL: baseURL,

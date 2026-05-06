@@ -1,13 +1,17 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { Calendar, Clock, MapPin, Users, Info, ChevronLeft, ChevronRight, X, CreditCard, AlertCircle, ArrowRight, CheckCircle, Check, Tag, DollarSign } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Info, ChevronLeft, ChevronRight, X, CreditCard, AlertCircle, ArrowRight, CheckCircle, Check, Tag, DollarSign, Loader } from "lucide-react";
 import api from "../api/axios.js";
 import { crearReservaThunk } from "../redux/slices/reservasSlice.js";
 import DashboardLayout from "../layouts/DashboardLayout.jsx";
 import Button from "../components/common/Button.jsx";
 import DateTimeSelector from "../components/common/DateTimeSelector.jsx";
 import { imageUrl } from "../utils/imageUrl.js";
+
+// Inicializar MercadoPago (poner public key desde env o texto según disponga el usuario)
+import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
+initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY || 'APP_USR-6bcf8da9-9b71-484a-b133-b4666f3de6a6', { locale: 'es-CO' });
 
 // Componente de Step Indicator
 function StepIndicator({ step, totalSteps = 3 }) {
@@ -184,6 +188,7 @@ export default function NuevaReserva() {
   const [currentStep, setCurrentStep] = useState(1);
   const [horasOcupadas, setHorasOcupadas] = useState([]);
   const [bloqueoId, setBloqueoId] = useState(null);
+  const [mpPreferenceId, setMpPreferenceId] = useState(null);
   const isConfirmedRef = useRef(false);
 
   const normalizeId = (value) => {
@@ -442,13 +447,13 @@ export default function NuevaReserva() {
               reservaId: respuesta._id,
               paymentMethod: "mercadopago"
             });
-            if (mpData.init_point) {
+            if (mpData.preferenceId) {
               isConfirmedRef.current = true;
-              setBloqueoId(null); // Desvincular de limpieza para no borrar wehook reserve
-              window.location.href = mpData.init_point;
-              return; // Detenemos la vista para redireccionar
+              setBloqueoId(null); // Desvincular de limpieza para no borrar reserva
+              setMpPreferenceId(mpData.preferenceId);
+              return; // Detenemos la vista normal porque mostraremos el Wallet
             } else {
-              throw new Error("No se pudo obtener el link de pago de MercadoPago.");
+              throw new Error("No se pudo obtener la preferencia de MercadoPago.");
             }
           } catch (mpErr) {
             console.error("Error validando mercadopago:", mpErr);
@@ -903,30 +908,51 @@ export default function NuevaReserva() {
 
                     {/* Botonera Step 2 */}
                     <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 md:gap-4 pt-3 md:pt-6 mt-2 border-t border-gray-200 dark:border-gray-700">
-                      <Button
-                        onClick={() => setCurrentStep(1)}
-                        disabled={creatingReserva}
-                        variant="outline"
-                        className="py-2 md:py-4 font-semibold text-sm md:text-base w-full sm:w-1/4"
-                      >
-                        Atrás
-                      </Button>
-                      <Button
-                        onClick={() => crearReserva("pendiente")}
-                        disabled={creatingReserva}
-                        className="py-2 md:py-4 font-bold text-sm md:text-lg w-full sm:w-1/3 bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-600 dark:hover:bg-yellow-700 flex items-center justify-center gap-1 md:gap-2"
-                      >
-                        {creatingReserva ? "..." : "Reservar"}
-                      </Button>
-                      <Button
-                        onClick={() => crearReserva("mercadopago")}
-                        disabled={creatingReserva}
-                        className="col-span-2 py-3 md:py-4 font-bold text-sm md:text-lg w-full sm:flex-1 flex items-center justify-center gap-1 md:gap-2 shadow-lg text-white"
-                        style={{ backgroundColor: '#009ee3' }}
-                      >
-                        {creatingReserva ? "Procesando..." : "MercadoPago"}
-                        <CreditCard className="w-4 h-4 md:w-6 md:h-6" />
-                      </Button>
+                      {!mpPreferenceId ? (
+                        <>
+                          <Button
+                            onClick={() => setCurrentStep(1)}
+                            disabled={creatingReserva}
+                            variant="outline"
+                            className="py-2 md:py-4 font-semibold text-sm md:text-base w-full sm:w-1/4"
+                          >
+                            Atrás
+                          </Button>
+                          <Button
+                            onClick={() => crearReserva("pendiente")}
+                            disabled={creatingReserva}
+                            className="py-2 md:py-4 font-bold text-sm md:text-lg w-full sm:w-1/3 bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-600 dark:hover:bg-yellow-700 flex items-center justify-center gap-1 md:gap-2"
+                          >
+                            {creatingReserva ? "..." : "Reservar"}
+                          </Button>
+                          <Button
+                            onClick={() => crearReserva("mercadopago")}
+                            disabled={creatingReserva}
+                            className="col-span-2 py-3 md:py-4 font-bold text-sm md:text-lg w-full sm:flex-1 flex items-center justify-center gap-1 md:gap-2 shadow-lg text-white"
+                            style={{ backgroundColor: '#009ee3' }}
+                          >
+                            {creatingReserva ? "Procesando..." : "MercadoPago"}
+                            <CreditCard className="w-4 h-4 md:w-6 md:h-6" />
+                          </Button>
+                        </>
+                      ) : (
+                        <div className="col-span-2 sm:w-full flex flex-col items-center py-4 bg-white dark:bg-transparent rounded-lg">
+                          <div className="w-full max-w-sm">
+                            <Wallet 
+                              initialization={{ 
+                                preferenceId: mpPreferenceId, 
+                                marketplace: true, // Si false no renderiza correctamente algunos estilos embedded en SDK nuevos
+                                redirectMode: 'modal' // Forzamos modal para evitar redirecciones y problemas cross-site en Chrome local
+                              }} 
+                              customization={{ texts: { valueProp: 'security_details' } }} 
+                              onReady={() => console.log('Brick Wallet listo')}
+                              onError={(err) => console.error('Error en Brick Wallet:', err)}
+                              onSubmit={() => console.log('Pago iniciado en Wallet')}
+                            />
+                          </div>
+                          <Button onClick={() => setMpPreferenceId(null)} variant="outline" className="mt-4 text-xs font-semibold">Cancelar e ir atrás</Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

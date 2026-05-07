@@ -15,6 +15,7 @@ import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import AnimatedContainer, { AnimatedList, HoverCard } from '../components/ui/AnimatedContainer';
 import { Link } from 'react-router-dom';
+import MercadoPagoConnect from '../components/MercadoPagoConnect';
 
 const Dashboard = () => {
   const { user } = useSelector(state => state.auth);
@@ -222,6 +223,18 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Conectar MercadoPago - solo para admin/propietario */}
+        {(user?.role === 'admin_cancha' || user?.role === 'admin_sistema') && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Integración de Cobros</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MercadoPagoConnect user={user} />
+            </CardContent>
+          </Card>
+        )}
         </div>
       </AnimatedContainer>
 

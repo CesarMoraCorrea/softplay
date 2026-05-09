@@ -183,7 +183,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               <MdSportsSoccer className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800 dark:text-white">SoftPlay</h1>
+              <h1 className="text-xl font-bold text-gray-800 dark:text-white">Soft<span className="text-blue-600 dark:text-blue-400">play</span></h1>
               <p className="text-xs text-gray-500 dark:text-gray-400">Sistema de Reservas</p>
             </div>
           </div>
@@ -197,34 +197,46 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
         {/* User Info */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">
-                {user?.name?.charAt(0)?.toUpperCase() || "U"}
-              </span>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-lg">
+                  {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-800 dark:text-white truncate">
+                  Hola, {user.name}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                <span
+                  className={`inline-block px-2 py-1 text-xs font-medium rounded-full mt-1 ${
+                    user.role === "admin_sistema"
+                      ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+                      : user.role === "admin_cancha"
+                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                      : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  {user.role === "admin_sistema"
+                    ? "Administrador del Sistema"
+                    : user.role === "admin_cancha"
+                    ? "Administrador de Cancha"
+                    : "Deportista"}
+                </span>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-800 dark:text-white truncate">
-                Hola, {user?.name || "Invitado"}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
-              <span
-                className={`inline-block px-2 py-1 text-xs font-medium rounded-full mt-1 ${
-                  user?.role === "admin_sistema"
-                    ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
-                    : user?.role === "admin_cancha"
-                    ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                    : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-                }`}
-              >
-                {user?.role === "admin_sistema"
-                  ? "Administrador del Sistema"
-                  : user?.role === "admin_cancha"
-                  ? "Administrador de Cancha"
-                  : "Usuario"}
-              </span>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">¿Ya tienes cuenta?</p>
+              <Link to="/login" className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">
+                Iniciar Sesión
+              </Link>
+              <Link to="/register" className="block w-full text-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-sm font-bold py-2 px-4 rounded-lg transition-colors">
+                Registrarse
+              </Link>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Navigation (se expande para rellenar altura) */}
@@ -244,15 +256,17 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         </nav>
 
         {/* Footer (siempre pegado al fondo) */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 group"
-          >
-            <FiLogOut className="w-5 h-5" />
-            <span className="font-medium">Cerrar Sesión</span>
-          </button>
-        </div>
+        {user && (
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 group"
+            >
+              <FiLogOut className="w-5 h-5" />
+              <span className="font-medium">Cerrar Sesión</span>
+            </button>
+          </div>
+        )}
       </div>
     </>
   );

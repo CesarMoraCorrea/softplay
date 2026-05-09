@@ -11,7 +11,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 import { ThemeProvider } from "./contexts/ThemeContext.jsx";
 import { useSelector } from "react-redux";
-import Hero from "./pages/home/Hero.jsx"; 
+import LandingPage from "./pages/home/LandingPage.jsx"; 
 
 export default function App() {
   // Mantenemos el acceso al estado de autenticación para las rutas protegidas
@@ -20,7 +20,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/" element={<Navigate to="/canchas" />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
@@ -47,11 +47,9 @@ export default function App() {
         <Route
           path="/home"
           element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <Hero />
-              </DashboardLayout>
-            </ProtectedRoute>
+            <DashboardLayout>
+              <LandingPage />
+            </DashboardLayout>
           }
         />
 

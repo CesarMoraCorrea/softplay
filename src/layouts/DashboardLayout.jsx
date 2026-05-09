@@ -45,9 +45,9 @@ const DashboardLayout = ({ children }) => {
                 </button>
                 <Link
                   to="/home"
-                  className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                  className="text-2xl font-bold text-gray-800 dark:text-white transition-all duration-200"
                 >
-                  SoftPlay
+                  Soft<span className="text-blue-600 dark:text-blue-400">play</span>
                 </Link>
               </div>
 
@@ -80,8 +80,10 @@ const DashboardLayout = ({ children }) => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 sm:p-6">
-          <div className="max-w-7xl mx-auto">{children}</div>
+        <main className={`flex-1 ${location.pathname === '/home' ? '' : 'p-4 sm:p-6'}`}>
+          <div className={location.pathname === '/home' ? 'w-full h-full' : 'max-w-7xl mx-auto'}>
+            {children}
+          </div>
         </main>
       </div>
     </div>

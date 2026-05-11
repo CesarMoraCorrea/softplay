@@ -174,7 +174,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       <div
         className={`fixed left-0 top-0 h-full flex flex-col bg-white dark:bg-gray-800 shadow-2xl z-50 transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shadow-none w-80 border-r border-gray-200 dark:border-gray-700`}
+        } w-80 border-r border-gray-200 dark:border-gray-700`}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">

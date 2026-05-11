@@ -29,6 +29,8 @@ export default function RegisterPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error } = useSelector(state => state.auth);
+  // Capturar la ruta de retorno guardada por ProtectedRoute
+  const from = location.state?.from || null;
 
   const roles = [
     { value: "usuario", label: "Usuario" },
@@ -140,9 +142,16 @@ export default function RegisterPage() {
       
       if (result.type.endsWith('/fulfilled')) {
         const registeredUser = result.payload?.user;
-        if (registeredUser?.role === 'admin_sistema') navigate('/admin/sistema');
-        else if (registeredUser?.role === 'admin_cancha') navigate('/admin/canchas');
-        else navigate('/home');
+        // Si había una ruta de retorno guardada (deep-linking), ir allí primero
+        if (from) {
+          navigate(from, { replace: true });
+        } else if (registeredUser?.role === 'admin_sistema') {
+          navigate('/admin/sistema');
+        } else if (registeredUser?.role === 'admin_cancha') {
+          navigate('/admin/canchas');
+        } else {
+          navigate('/canchas');
+        }
       }
     }
   };
@@ -410,7 +419,8 @@ export default function RegisterPage() {
         <p className="text-gray-600 dark:text-gray-400 font-medium transition-colors duration-300">
           ¿Ya tienes una cuenta?{' '}
           <Link 
-            to="/login" 
+            to="/login"
+            state={{ from }}
             className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-bold hover:underline transition-colors duration-300 ml-1"
           >
             Inicia sesión

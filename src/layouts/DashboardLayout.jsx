@@ -1,26 +1,45 @@
 // Componente: DashboardLayout
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { FiMenu, FiLogOut } from "react-icons/fi";
+import { FiMenu, FiLogOut, FiCalendar, FiSettings } from "react-icons/fi";
+import { FaSun, FaMoon } from "react-icons/fa";
+import { MdAdminPanelSettings } from "react-icons/md";
 import Sidebar from "../components/layout/Sidebar";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { Home, MapPin } from "lucide-react";
-import ThemeSelector from "../theme/ThemeSelector";
+import { useTheme } from "../contexts/ThemeContext";
 import { logout } from "../redux/slices/authSlice";
 
 const DashboardLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useSelector((state) => state.auth);
+  const { theme, toggleTheme } = useTheme();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const navigation = [
-    { name: "Inicio", href: "/home", icon: <Home className="w-5 h-5" /> },
-    { name: "Canchas", href: "/canchas", icon: <MapPin className="w-5 h-5" /> },
+  // Navegación pública
+  const publicNav = [
+    { name: "Inicio", href: "/home", icon: <Home className="w-4 h-4" /> },
+    { name: "Canchas", href: "/canchas", icon: <MapPin className="w-4 h-4" /> },
   ];
 
-  const isActive = (path) => location.pathname === path;
+  // Navegación por rol
+  const userNav = user?.role === "usuario" ? [
+    { name: "Mis Reservas", href: "/reservas", icon: <FiCalendar className="w-4 h-4" /> },
+  ] : [];
+
+  const adminNav = (user?.role === "admin_cancha" || user?.role === "admin_sistema") ? [
+    { name: "Admin", href: "/admin/canchas", icon: <MdAdminPanelSettings className="w-4 h-4" /> },
+  ] : [];
+
+  const sistemNav = user?.role === "admin_sistema" ? [
+    { name: "Sistema", href: "/admin/sistema", icon: <FiSettings className="w-4 h-4" /> },
+  ] : [];
+
+  const allNavItems = [...publicNav, ...userNav, ...adminNav, ...sistemNav];
+
+  const isActive = (path) => location.pathname.startsWith(path) && (path !== "/home" || location.pathname === "/home");
 
   const handleLogout = () => {
     dispatch(logout());
@@ -66,7 +85,7 @@ const DashboardLayout = ({ children }) => {
 
                 {/* Nav links */}
                 <nav className="hidden lg:flex items-center gap-1">
-                  {navigation.map((item) => (
+                  {allNavItems.map((item) => (
                     <Link
                       key={item.name}
                       to={item.href}
@@ -82,8 +101,14 @@ const DashboardLayout = ({ children }) => {
                   ))}
                 </nav>
 
-                {/* Selector de tema */}
-                <ThemeSelector />
+                {/* Botón tema: mismo estilo que en Login */}
+                <button
+                  onClick={toggleTheme}
+                  aria-label="Cambiar tema"
+                  className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm"
+                >
+                  {theme === 'dark' ? <FaSun size={18} /> : <FaMoon size={18} />}
+                </button>
 
                 {/* Auth: botones si no hay sesión, avatar si la hay */}
                 {user ? (

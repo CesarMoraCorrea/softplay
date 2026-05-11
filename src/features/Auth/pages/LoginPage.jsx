@@ -234,7 +234,8 @@ export default function LoginPage() {
         <p className="text-gray-600 dark:text-gray-400 font-medium transition-colors duration-300">
           ¿No tienes una cuenta?{' '}
           <Link 
-            to="/register" 
+            to="/register"
+            state={{ from }}
             className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-bold hover:underline transition-colors duration-300 ml-1"
           >
             Regístrate

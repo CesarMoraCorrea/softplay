@@ -244,15 +244,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           {filteredMenuItems.map((item) => (
             <MenuItem key={item.key} item={item} />
           ))}
-
-          {/* Theme Selector */}
-          <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <FiSettings className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tema</span>
-            </div>
-            <ThemeSelector />
-          </div>
         </nav>
 
         {/* Footer (siempre pegado al fondo) */}

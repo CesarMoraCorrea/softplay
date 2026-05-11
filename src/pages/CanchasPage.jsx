@@ -17,6 +17,7 @@ import GoogleMapsView from "../components/GoogleMapsView";
 // Importamos la acción para obtener canchas del backend
 import { fetchCanchas } from "../redux/slices/canchasSlice";
 import api from "../api/axios";
+import SedeReservaForm from "../features/reservas/components/SedeReservaForm";
 
 const CanchasPage = () => {
   const dispatch = useDispatch();
@@ -29,7 +30,8 @@ const CanchasPage = () => {
   const [vistaActual, setVistaActual] = useState("mapa"); // 'lista' o 'mapa'
   const [vistaPrevia, setVistaPrevia] = useState("mapa"); // Track view before entering scenarios
   const [selectedSedeId, setSelectedSedeId] = useState(null);
-  const [selectedSede, setSelectedSede] = useState(null); // Para guardar la sede seleccionada
+  const [selectedSede, setSelectedSede] = useState(null);
+  const [sedeParaReservar, setSedeParaReservar] = useState(null);
   const [rangoPreciosGlobal, setRangoPreciosGlobal] = useState({ min: 0, max: 200000 });
   const [filtros, setFiltros] = useState({
     ubicacion: "",
@@ -452,14 +454,19 @@ const CanchasPage = () => {
         </Alert>
       )}
 
+      {/* Formulario inline de reserva */}
+      {sedeParaReservar && (
+        <SedeReservaForm sede={sedeParaReservar} onClose={() => setSedeParaReservar(null)} />
+      )}
+
       {/* Resultados */}
-      {loading ? (
+      {!sedeParaReservar && loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
           {[...Array(6)].map((_, index) => (
             <div key={index} className="bg-gray-200 dark:bg-gray-700 rounded-lg h-80"></div>
           ))}
         </div>
-      ) : sedes.length > 0 ? (
+      ) : !sedeParaReservar && sedes.length > 0 ? (
         <AnimatePresence mode="wait">
           <motion.div
             key={vistaActual + (selectedSede ? "selected" : "all")}
@@ -507,9 +514,12 @@ const CanchasPage = () => {
                           <span className="text-gray-500 dark:text-gray-400">{sede?.ubicacion?.barrio || "Sin barrio"}</span>
                         </div>
 
-                        <div className="mt-auto pt-5">
-                          <Button className="w-full bg-blue-600 hover:bg-blue-700 font-bold shadow-md transform hover:-translate-y-0.5 transition-all" onClick={() => handleVerEscenarios(sede)}>
-                            Ver escenarios disponibles
+                        <div className="mt-auto pt-5 flex flex-col gap-2">
+                          <Button className="w-full bg-blue-600 hover:bg-blue-700 font-bold shadow-md" onClick={() => setSedeParaReservar(sede)}>
+                            Reservar aquí
+                          </Button>
+                          <Button variant="outline" className="w-full" onClick={() => handleVerEscenarios(sede)}>
+                            Ver escenarios
                           </Button>
                         </div>
                       </div>

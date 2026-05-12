@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-// import { useSearchParams, useNavigate } from "react-router-dom"; // Not needed for vista state
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Search, Filter, MapPin, Star, X, Map, List, Building2, DollarSign, Calendar, Clock, Tag, Trash2, Radar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,10 +17,10 @@ import GoogleMapsView from "../components/GoogleMapsView";
 // Importamos la acción para obtener canchas del backend
 import { fetchCanchas } from "../redux/slices/canchasSlice";
 import api from "../api/axios";
-import SedeReservaForm from "../features/reservas/components/SedeReservaForm";
 
 const CanchasPage = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { list: sedes, loading } = useSelector((state) => state.canchas);
 
   // Estado local para errores
@@ -31,7 +31,6 @@ const CanchasPage = () => {
   const [vistaPrevia, setVistaPrevia] = useState("mapa"); // Track view before entering scenarios
   const [selectedSedeId, setSelectedSedeId] = useState(null);
   const [selectedSede, setSelectedSede] = useState(null);
-  const [sedeParaReservar, setSedeParaReservar] = useState(null);
   const [rangoPreciosGlobal, setRangoPreciosGlobal] = useState({ min: 0, max: 200000 });
   const [filtros, setFiltros] = useState({
     ubicacion: "",
@@ -454,19 +453,14 @@ const CanchasPage = () => {
         </Alert>
       )}
 
-      {/* Formulario inline de reserva */}
-      {sedeParaReservar && (
-        <SedeReservaForm sede={sedeParaReservar} onClose={() => setSedeParaReservar(null)} />
-      )}
-
       {/* Resultados */}
-      {!sedeParaReservar && loading ? (
+      {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
           {[...Array(6)].map((_, index) => (
             <div key={index} className="bg-gray-200 dark:bg-gray-700 rounded-lg h-80"></div>
           ))}
         </div>
-      ) : !sedeParaReservar && sedes.length > 0 ? (
+      ) : sedes.length > 0 ? (
         <AnimatePresence mode="wait">
           <motion.div
             key={vistaActual + (selectedSede ? "selected" : "all")}
@@ -515,12 +509,18 @@ const CanchasPage = () => {
                         </div>
 
                         <div className="mt-auto pt-5 flex flex-col gap-2">
-                          <Button className="w-full bg-blue-600 hover:bg-blue-700 font-bold shadow-md" onClick={() => setSedeParaReservar(sede)}>
+                          <button
+                            onClick={() => navigate(`/reservar/sede/${sede._id}`)}
+                            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md"
+                          >
                             Reservar aquí
-                          </Button>
-                          <Button variant="outline" className="w-full" onClick={() => handleVerEscenarios(sede)}>
+                          </button>
+                          <button
+                            onClick={() => handleVerEscenarios(sede)}
+                            className="w-full py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                          >
                             Ver escenarios
-                          </Button>
+                          </button>
                         </div>
                       </div>
                     </Card>

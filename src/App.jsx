@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { LoginPage, RegisterPage } from "./features/Auth/index.js";
 import CanchasPage from "./pages/CanchasPage.jsx";
 import NuevaReserva from "./pages/NuevaReserva.jsx";
+import SedeReservaPage from "./pages/SedeReservaPage.jsx";
 import MisReservas from "./pages/MisReservas.jsx";
 import ReservaDetalle from "./pages/ReservaDetalle.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -53,11 +54,22 @@ export default function App() {
           }
         />
 
+        {/* Reserva por sede (nuevo flujo en cascada) — DEBE ir antes que /reservar/:id */}
+        <Route
+          path="/reservar/sede/:sedeId"
+          element={
+            <ProtectedRoute>
+              <SedeReservaPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Reserva directa por escenario (flujo existente, deep-link) */}
         <Route
           path="/reservar/:id"
           element={
             <ProtectedRoute>
-                <NuevaReserva />
+              <NuevaReserva />
             </ProtectedRoute>
           }
         />

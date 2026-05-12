@@ -32,9 +32,8 @@ export default function SedeReservaForm({ sede, onClose }) {
   const [horaInicio, setHoraInicio] = useState("");
   const [horasOcupadas, setHorasOcupadas] = useState([]);
   const [bloqueoId, setBloqueoId] = useState(null);
-  // Ref en sinc con bloqueoId: permite que los cleanups lean el valor ACTUAL
-  // sin quedar capturados en el closure del useEffect de registro inicial
   const bloqueoIdRef = useRef(null);
+  const [loadingSlot, setLoadingSlot] = useState(null); // slot con spinner activo
   const [reserva, setReserva] = useState(null);
   const [creating, setCreating] = useState(null);
   const [error, setError] = useState("");
@@ -98,36 +97,36 @@ export default function SedeReservaForm({ sede, onClose }) {
     };
   }, []); // deps vacíos: se registra una sola vez, usa ref para leer el valor actual
 
-  // Libera el bloqueo activo - limpia ref INMEDIATAMENTE para evitar doble-delete
-  const liberarBloqueo = async () => {
+  // Libera bloqueo anterior (fire-and-forget: no bloquea la UI)
+  const liberarBloqueo = () => {
     const id = bloqueoIdRef.current;
     if (id && !isConfirmedRef.current) {
-      bloqueoIdRef.current = null; // limpiar ref antes del await para evitar re-entrada
+      bloqueoIdRef.current = null;
       setBloqueoId(null);
-      try { await api.delete(`/reservas/${id}`); } catch {}
+      api.delete(`/reservas/${id}`).catch(() => {}); // no esperamos, es limpieza
     }
   };
 
   /* ── Handlers ── */
-  const selDeporte = async (d) => {
+  const selDeporte = (d) => {
     if (d === deporte) return;
-    await liberarBloqueo();
+    liberarBloqueo();
     setDeporte(d); setEscenario(null); setDia(""); setHoraInicio(""); setError("");
   };
 
-  const selEscenario = async (e) => {
-    await liberarBloqueo();
+  const selEscenario = (e) => {
+    liberarBloqueo();
     setEscenario(e); setDia(""); setHoraInicio(""); setError("");
     setTimeout(() => goTo(1), 150);
   };
 
-  const selDia = async (d) => {
-    await liberarBloqueo();
+  const selDia = (d) => {
+    liberarBloqueo();
     setDia(d); setHoraInicio(""); setError("");
   };
 
-  const changeDuracion = async (h) => {
-    await liberarBloqueo();
+  const changeDuracion = (h) => {
+    liberarBloqueo();
     setHoras(h); setHoraInicio(""); setError("");
   };
 
@@ -135,31 +134,41 @@ export default function SedeReservaForm({ sede, onClose }) {
     if (isBloqueandoRef.current) return;
     isBloqueandoRef.current = true;
     setError("");
+    setLoadingSlot(slot); // feedback visual inmediato
     const horaStr = floatToTimeString(slot);
-    // Capturar y limpiar ref ANTES del await para que el cleanup no intente borrarlo de nuevo
+
+    // Capturar y limpiar ref ANTES de la petición
     const prevId = bloqueoIdRef.current;
-    if (prevId) {
-      bloqueoIdRef.current = null;
-      setBloqueoId(null);
-      try { await api.delete(`/reservas/${prevId}`); } catch {}
-    }
+    bloqueoIdRef.current = null;
+    setBloqueoId(null);
+
     try {
-      const { data } = await api.post("/reservas/bloquear", {
-        sedeId: String(sede._id),
-        escenarioId: String(escenario._id),
-        fecha: dia,
-        horas: Number(horas),
-        horaInicio: horaStr,
-      });
+      // DELETE del anterior y POST del nuevo en PARALELO—reduce latencia a 1 RTT
+      const deletePromise = prevId
+        ? api.delete(`/reservas/${prevId}`).catch(() => {})
+        : Promise.resolve();
+
+      const [, { data }] = await Promise.all([
+        deletePromise,
+        api.post("/reservas/bloquear", {
+          sedeId: String(sede._id),
+          escenarioId: String(escenario._id),
+          fecha: dia,
+          horas: Number(horas),
+          horaInicio: horaStr,
+        }),
+      ]);
+
       const newId = data?._id || data?.id;
       bloqueoIdRef.current = newId;
       setBloqueoId(newId);
       setHoraInicio(horaStr);
-      setTimeout(() => goTo(2), 200);
+      setTimeout(() => goTo(2), 150);
     } catch (e) {
       setError(e.response?.data?.message || "Esta hora ya fue tomada. Elige otra.");
     } finally {
       isBloqueandoRef.current = false;
+      setLoadingSlot(null);
     }
   };
 
@@ -343,14 +352,28 @@ export default function SedeReservaForm({ sede, onClose }) {
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {slotsData.slots.map(slot => {
-                    const oc = isOcupado(slot), past = isPast(slot), hs = floatToTimeString(slot), dis = oc || past;
+                    const oc = isOcupado(slot), past = isPast(slot), hs = floatToTimeString(slot);
+                    const isLoading = loadingSlot === slot;
+                    const dis = oc || past || (loadingSlot !== null && !isLoading);
                     return (
-                      <button key={slot} disabled={dis} onClick={() => !dis && selHora(slot)}
-                        className={`py-3 rounded-xl text-sm font-semibold transition-all ${oc
-                          ? "bg-red-50 dark:bg-red-900/10 text-red-300 dark:text-red-700 line-through cursor-not-allowed text-xs"
-                          : past ? "bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                          : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:scale-105 hover:shadow-md"
-                        }`}>{hs}</button>
+                      <button key={slot} disabled={dis || isLoading} onClick={() => selHora(slot)}
+                        className={`py-3 rounded-xl text-sm font-semibold transition-all relative ${
+                          isLoading ? "bg-blue-600 text-white scale-105 shadow-lg cursor-wait" :
+                          oc ? "bg-red-50 dark:bg-red-900/10 text-red-300 dark:text-red-700 line-through cursor-not-allowed text-xs" :
+                          past ? "bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed" :
+                          dis ? "opacity-40 cursor-not-allowed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400" :
+                          "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:scale-105 hover:shadow-md"
+                        }`}>
+                        {isLoading
+                          ? <span className="flex items-center justify-center gap-1">
+                              <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                              </svg>
+                              {hs}
+                            </span>
+                          : hs}
+                      </button>
                     );
                   })}
                 </div>

@@ -437,7 +437,7 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, onVerEscenarios, userLoc
           title: cancha?.nombre || "Cancha",
           content: markerEl,
         });
-        marker.addListener("click", () => {
+        marker.addListener("gmp-click", () => {
           handleMarkerClick(cancha);
         });
       } else {

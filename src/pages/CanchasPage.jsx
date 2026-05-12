@@ -515,12 +515,6 @@ const CanchasPage = () => {
                           >
                             Reservar aquí
                           </button>
-                          <button
-                            onClick={() => handleVerEscenarios(sede)}
-                            className="w-full py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                          >
-                            Ver escenarios
-                          </button>
                         </div>
                       </div>
                     </Card>

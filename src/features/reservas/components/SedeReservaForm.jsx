@@ -32,9 +32,15 @@ export default function SedeReservaForm({ sede, onClose }) {
   const [horaInicio, setHoraInicio] = useState("");
   const [horasOcupadas, setHorasOcupadas] = useState([]);
   const [bloqueoId, setBloqueoId] = useState(null);
+  // Ref en sinc con bloqueoId: permite que los cleanups lean el valor ACTUAL
+  // sin quedar capturados en el closure del useEffect de registro inicial
+  const bloqueoIdRef = useRef(null);
   const [reserva, setReserva] = useState(null);
   const [creating, setCreating] = useState(null);
   const [error, setError] = useState("");
+
+  // Mantiene el ref siempre sincronizado con el estado
+  useEffect(() => { bloqueoIdRef.current = bloqueoId; }, [bloqueoId]);
 
   const goTo = (s) => {
     setStep(s);
@@ -72,30 +78,33 @@ export default function SedeReservaForm({ sede, onClose }) {
     fetch(); const t = setInterval(fetch, 3000); return () => clearInterval(t);
   }, [escenario, dia, bloqueoId]);
 
-  /* ── Cleanup bloqueo al salir/navegar ── */
+  /* ── Cleanup: registrado UNA VEZ, lee siempre el ref actual ── */
   useEffect(() => {
-    const cleanup = () => {
-      if (bloqueoId && !isConfirmedRef.current) {
+    const handleBeforeUnload = () => {
+      const id = bloqueoIdRef.current;
+      if (id && !isConfirmedRef.current) {
         const tok = localStorage.getItem("token")?.replace(/['"]+/g, "");
-        fetch(`${KEEPALIVE_BASE}/reservas/${bloqueoId}`, { method: "DELETE", headers: { Authorization: `Bearer ${tok}` }, keepalive: true }).catch(() => {});
+        fetch(`${KEEPALIVE_BASE}/reservas/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${tok}` }, keepalive: true }).catch(() => {});
       }
     };
-    window.addEventListener("beforeunload", cleanup);
+    window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
-      window.removeEventListener("beforeunload", cleanup);
-      // Al desmontar el componente, liberar si no fue confirmado
-      if (bloqueoId && !isConfirmedRef.current) {
-        api.delete(`/reservas/${bloqueoId}`).catch(() => {});
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      // Desmontar: liberar bloqueo activo si lo hay
+      const id = bloqueoIdRef.current;
+      if (id && !isConfirmedRef.current) {
+        api.delete(`/reservas/${id}`).catch(() => {});
       }
     };
-  }, [bloqueoId]);
+  }, []); // deps vacíos: se registra una sola vez, usa ref para leer el valor actual
 
-  // Libera el bloqueo activo de forma segura (con estado)
-  const liberarBloqueo = async (idOverride) => {
-    const id = idOverride ?? bloqueoId;
+  // Libera el bloqueo activo - limpia ref INMEDIATAMENTE para evitar doble-delete
+  const liberarBloqueo = async () => {
+    const id = bloqueoIdRef.current;
     if (id && !isConfirmedRef.current) {
-      try { await api.delete(`/reservas/${id}`); } catch {}
+      bloqueoIdRef.current = null; // limpiar ref antes del await para evitar re-entrada
       setBloqueoId(null);
+      try { await api.delete(`/reservas/${id}`); } catch {}
     }
   };
 
@@ -123,16 +132,16 @@ export default function SedeReservaForm({ sede, onClose }) {
   };
 
   const selHora = async (slot) => {
-    // Guard: evitar llamadas simultáneas por doble click
     if (isBloqueandoRef.current) return;
     isBloqueandoRef.current = true;
     setError("");
     const horaStr = floatToTimeString(slot);
-    // Capturar bloqueoId actual antes de limpiar estado
-    const prevBloqueoId = bloqueoId;
-    if (prevBloqueoId) {
-      try { await api.delete(`/reservas/${prevBloqueoId}`); } catch {}
+    // Capturar y limpiar ref ANTES del await para que el cleanup no intente borrarlo de nuevo
+    const prevId = bloqueoIdRef.current;
+    if (prevId) {
+      bloqueoIdRef.current = null;
       setBloqueoId(null);
+      try { await api.delete(`/reservas/${prevId}`); } catch {}
     }
     try {
       const { data } = await api.post("/reservas/bloquear", {
@@ -142,7 +151,9 @@ export default function SedeReservaForm({ sede, onClose }) {
         horas: Number(horas),
         horaInicio: horaStr,
       });
-      setBloqueoId(data?._id || data?.id);
+      const newId = data?._id || data?.id;
+      bloqueoIdRef.current = newId;
+      setBloqueoId(newId);
       setHoraInicio(horaStr);
       setTimeout(() => goTo(2), 200);
     } catch (e) {

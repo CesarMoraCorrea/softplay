@@ -254,18 +254,22 @@ export default function SedeReservaForm({ sede, onClose }) {
         <div className="animate-fadeIn">
           <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
             {/* Columna izquierda: deportes */}
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Deporte</p>
-              <div className="flex flex-row lg:flex-col gap-2 flex-wrap">
-                {deportes.map(d => (
-                  <button key={d} onClick={() => selDeporte(d)}
-                    className={`flex items-center gap-2.5 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${deporte === d
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/40"
-                      : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                    }`}>
-                    <span className="text-xl">{DEPORTE_ICONS[d] || "🏟️"}</span>{d}
-                  </button>
-                ))}
+            <div className="relative">
+              <div className="sticky top-6">
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4 pl-1">Deporte</p>
+                <div className="flex flex-row lg:flex-col gap-3 flex-wrap">
+                  {deportes.map(d => (
+                    <button key={d} onClick={() => selDeporte(d)}
+                      className={`group relative flex items-center gap-3 px-5 py-4 rounded-[1.25rem] font-semibold text-sm transition-all duration-300 overflow-hidden ${deporte === d
+                        ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105"
+                        : "bg-white/60 dark:bg-gray-800/60 backdrop-blur-md text-gray-700 dark:text-gray-300 border border-white/60 dark:border-white/10 hover:border-blue-400/50 hover:bg-white dark:hover:bg-gray-800 hover:shadow-xl hover:-translate-y-1"
+                      }`}>
+                      {deporte === d && <div className="absolute inset-0 bg-white/20 w-full h-full -skew-x-12 translate-x-[-150%] group-hover:animate-shine" />}
+                      <span className="text-2xl drop-shadow-sm">{DEPORTE_ICONS[d] || "🏟️"}</span>
+                      <span className="tracking-wide">{d}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -279,22 +283,32 @@ export default function SedeReservaForm({ sede, onClose }) {
               ) : (
                 <>
                   <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Escenarios disponibles · {deporte}</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                     {escenariosFiltrados.map(esc => {
                       const img = esc.imagenes?.[0] ? imageUrl(esc.imagenes[0]) : sede.imagenes?.[0] ? imageUrl(sede.imagenes[0]) : null;
                       return (
                         <button key={esc._id} onClick={() => selEscenario(esc)}
-                          className="text-left rounded-2xl border-2 overflow-hidden transition-all hover:scale-[1.02] hover:shadow-xl border-gray-200 dark:border-gray-700 hover:border-blue-500 group bg-white dark:bg-gray-800">
-                          {img
-                            ? <img src={img} alt={esc.nombre} className="w-full h-36 object-cover group-hover:brightness-105 transition-all" />
-                            : <div className="w-full h-28 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center text-4xl">{DEPORTE_ICONS[esc.tipoDeporte] || "🏟️"}</div>}
-                          <div className="p-3">
-                            <p className="font-bold text-gray-900 dark:text-white">{esc.nombre}</p>
-                            <p className="text-xs text-gray-400 mb-1">{esc.superficie}</p>
-                            <p className="text-sm font-bold text-blue-600 dark:text-blue-400">${esc.precioPorHora?.toLocaleString("es-AR")}<span className="text-xs font-normal text-gray-400">/h</span></p>
+                          className="text-left rounded-[1.5rem] overflow-hidden transition-all duration-500 hover:scale-[1.03] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)] border border-white/60 dark:border-white/10 group bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl relative flex flex-col h-full">
+                          <div className="relative w-full h-40 overflow-hidden">
+                            {img
+                              ? <img src={img} alt={esc.nombre} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out" />
+                              : <div className="w-full h-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center text-5xl group-hover:scale-110 transition-transform duration-700">{DEPORTE_ICONS[esc.tipoDeporte] || "🏟️"}</div>}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           </div>
-                          <div className="bg-blue-600 text-white text-xs font-bold py-1.5 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            Reservar este escenario →
+                          <div className="p-5 flex-1 flex flex-col justify-between relative z-10 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md">
+                            <div>
+                              <p className="font-bold text-gray-900 dark:text-white text-lg tracking-tight mb-1">{esc.nombre}</p>
+                              <span className="inline-block px-2.5 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 rounded-lg text-xs font-medium mb-3">{esc.superficie}</span>
+                            </div>
+                            <div className="flex items-end justify-between mt-2">
+                              <div>
+                                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-0.5">Precio</p>
+                                <p className="text-xl font-black text-blue-600 dark:text-blue-400 tracking-tight">${esc.precioPorHora?.toLocaleString("es-AR")}<span className="text-xs font-medium text-gray-400 ml-1">/h</span></p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="absolute bottom-0 left-0 w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-bold py-3 text-center translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-20 flex items-center justify-center gap-2 shadow-lg">
+                            Reservar escenario <ArrowRight className="w-4 h-4" />
                           </div>
                         </button>
                       );
@@ -310,16 +324,16 @@ export default function SedeReservaForm({ sede, onClose }) {
       {/* ══ PASO 1: Horario (Duración + Fecha + Horas) ══ */}
       {step === 1 && (
         <div className="animate-fadeIn">
-          {/* Duración */}
-          <div className="mb-6">
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Duración</p>
-            <div className="flex flex-wrap gap-2">
+          <div className="mb-8">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4 pl-1">Duración de la reserva</p>
+            <div className="flex flex-wrap gap-3">
               {[1, 1.5, 2, 3, 4].map(h => (
                 <button key={h} onClick={() => changeDuracion(h)}
-                  className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${horas === h
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-blue-900/40 scale-105"
-                    : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  className={`relative px-6 py-3 rounded-2xl text-sm font-bold transition-all duration-300 overflow-hidden ${horas === h
+                    ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105"
+                    : "bg-white/60 dark:bg-gray-800/60 backdrop-blur-md text-gray-700 dark:text-gray-300 border border-white/60 dark:border-white/10 hover:border-blue-400/50 hover:bg-white dark:hover:bg-gray-800 hover:shadow-md hover:-translate-y-1"
                   }`}>
+                  {horas === h && <div className="absolute inset-0 bg-white/20 w-full h-full -skew-x-12 translate-x-[-150%] animate-shine" />}
                   {h === 1 ? "1 hora" : h === 1.5 ? "1h 30min" : `${h} horas`}
                 </button>
               ))}
@@ -350,27 +364,26 @@ export default function SedeReservaForm({ sede, onClose }) {
               ) : slotsData.slots.length === 0 ? (
                 <div className="flex items-center justify-center h-40 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500">Sin horarios configurados</div>
               ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                   {slotsData.slots.map(slot => {
                     const oc = isOcupado(slot), past = isPast(slot), hs = floatToTimeString(slot);
                     const isLoading = loadingSlot === slot;
                     const dis = oc || past || (loadingSlot !== null && !isLoading);
                     return (
                       <button key={slot} disabled={dis || isLoading} onClick={() => selHora(slot)}
-                        className={`py-3 rounded-xl text-sm font-semibold transition-all relative ${
-                          isLoading ? "bg-blue-600 text-white scale-105 shadow-lg cursor-wait" :
-                          oc ? "bg-red-50 dark:bg-red-900/10 text-red-300 dark:text-red-700 line-through cursor-not-allowed text-xs" :
-                          past ? "bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed" :
-                          dis ? "opacity-40 cursor-not-allowed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400" :
-                          "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:scale-105 hover:shadow-md"
+                        className={`group relative py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 overflow-hidden ${
+                          isLoading ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white scale-105 shadow-xl shadow-blue-500/30 cursor-wait" :
+                          oc ? "bg-red-50/50 dark:bg-red-900/10 text-red-300 dark:text-red-700/50 line-through cursor-not-allowed opacity-70" :
+                          past ? "bg-gray-50/50 dark:bg-gray-800/50 text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-50" :
+                          dis ? "opacity-40 cursor-not-allowed bg-white/60 dark:bg-gray-800/60 border border-white/60 dark:border-gray-700 text-gray-400" :
+                          "bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-white/60 dark:border-white/10 text-gray-700 dark:text-gray-200 hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-600 hover:text-white hover:border-blue-500 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20"
                         }`}>
                         {isLoading
-                          ? <span className="flex items-center justify-center gap-1">
-                              <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                          ? <span className="flex items-center justify-center gap-2">
+                              <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                               </svg>
-                              {hs}
                             </span>
                           : hs}
                       </button>
@@ -392,49 +405,63 @@ export default function SedeReservaForm({ sede, onClose }) {
 
       {/* ══ PASO 2: Confirmar ══ */}
       {step === 2 && (
-        <div className="animate-fadeIn max-w-lg mx-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-5 shadow-sm">
+        <div className="animate-fadeIn max-w-lg mx-auto relative">
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-[2rem] blur opacity-20"></div>
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-[2rem] border border-white/50 dark:border-gray-800 overflow-hidden mb-6 shadow-2xl relative">
+            <div className="absolute top-0 right-0 p-4">
+              <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-emerald-500" />
+              </div>
+            </div>
             {(escenario?.imagenes?.[0] || sede.imagenes?.[0]) && (
-              <img src={imageUrl(escenario?.imagenes?.[0] || sede.imagenes?.[0])} alt={escenario?.nombre} className="w-full h-44 object-cover" />
+              <div className="relative h-48 w-full p-4 pb-0">
+                <img src={imageUrl(escenario?.imagenes?.[0] || sede.imagenes?.[0])} alt={escenario?.nombre} className="w-full h-full object-cover rounded-2xl shadow-inner" />
+              </div>
             )}
-            <div className="p-5 space-y-2.5">
-              {[
-                { label: "Sede", value: sede.nombre },
-                { label: "Cancha", value: escenario?.nombre },
-                { label: "Deporte", value: deporte },
-                { label: "Fecha", value: dia ? new Date(dia + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" }) : "" },
-                { label: "Horario", value: horaInicio && horaFin ? `${horaInicio} → ${horaFin}` : "" },
-                { label: "Duración", value: horas === 1 ? "1 hora" : horas === 1.5 ? "1h 30min" : `${horas} horas` },
-              ].map(r => (
-                <div key={r.label} className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700/50 last:border-0">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">{r.label}</span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white text-right ml-4 capitalize">{r.value}</span>
+            <div className="p-8 pt-6 space-y-4">
+              <div className="mb-6">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Resumen de reserva</p>
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{escenario?.nombre}</h3>
+                <p className="text-sm font-medium text-gray-500 flex items-center gap-1 mt-1"><MapPin className="w-3.5 h-3.5"/> {sede?.nombre}</p>
+              </div>
+
+              <div className="space-y-3 p-5 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50">
+                {[
+                  { label: "Deporte", value: deporte || "No especificado" },
+                  { label: "Fecha", value: dia ? new Date(dia + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" }) : "" },
+                  { label: "Horario", value: horaInicio && horaFin ? `${horaInicio} → ${horaFin}` : "" },
+                  { label: "Duración", value: horas === 1 ? "1 hora" : horas === 1.5 ? "1h 30min" : `${horas} horas` },
+                ].map(r => (
+                  <div key={r.label} className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{r.label}</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white capitalize text-right">{r.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-6 border-t border-dashed border-gray-200 dark:border-gray-700">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest text-xs">Total a pagar</span>
+                  <span className="text-3xl font-black text-blue-600 dark:text-blue-400 tracking-tighter">${total.toLocaleString("es-AR")}</span>
                 </div>
-              ))}
-              <div className="flex justify-between items-center pt-1">
-                <span className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5"><DollarSign className="w-4 h-4 text-blue-500" />Total a pagar</span>
-                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">${total.toLocaleString("es-AR")}</span>
               </div>
             </div>
           </div>
 
-          {error && (
-            <div className="flex items-center gap-2 mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button disabled={!!creating} onClick={() => crearReserva("pendiente")}
-              className="py-4 rounded-xl font-bold text-white bg-yellow-500 hover:bg-yellow-600 transition-colors disabled:opacity-60 text-sm">
-              {creating === "pendiente" ? "Procesando..." : "Reservar · Pagar en sede"}
+              className="group relative overflow-hidden py-4 rounded-2xl font-bold text-white bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-black dark:hover:bg-gray-100 transition-all shadow-xl disabled:opacity-60 text-sm hover:-translate-y-0.5">
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Clock className="w-4 h-4" />
+                {creating === "pendiente" ? "Procesando..." : "Reservar · Pagar en sede"}
+              </span>
             </button>
             <button disabled={!!creating} onClick={() => crearReserva("mercadopago")}
-              className="py-4 rounded-xl font-bold text-white transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm"
+              className="group relative overflow-hidden py-4 rounded-2xl font-bold text-white transition-all shadow-xl disabled:opacity-60 flex items-center justify-center gap-2 text-sm hover:-translate-y-0.5 shadow-blue-500/20"
               style={{ backgroundColor: "#009ee3" }}>
-              <CreditCard className="w-4 h-4" />
-              {creating === "mercadopago" ? "Redirigiendo..." : "Pagar con MercadoPago"}
+              <div className="absolute inset-0 bg-white/20 w-full h-full -skew-x-12 translate-x-[-150%] group-hover:animate-shine" />
+              <CreditCard className="w-4 h-4 relative z-10" />
+              <span className="relative z-10">{creating === "mercadopago" ? "Redirigiendo..." : "Pagar con MercadoPago"}</span>
             </button>
           </div>
         </div>

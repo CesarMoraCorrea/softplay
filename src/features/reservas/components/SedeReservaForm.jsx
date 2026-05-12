@@ -6,11 +6,22 @@ import { imageUrl } from "../../../utils/imageUrl";
 import { timeStringToFloat, floatToTimeString, generarSlotsHorario, DEPORTE_ICONS } from "../utils/reservaHelpers";
 import { MiniCalendar, Stepper, SelectionChip } from "./ReservaFormParts";
 
+// Para el fetch keepalive de beforeunload, necesitamos URL absoluta.
+// En producción VITE_API_URL es la URL completa del backend.
+// En desarrollo, el proxy de Vite (/api → localhost:5000) no funciona con keepalive,
+// así que usamos la URL directa del backend.
+const KEEPALIVE_BASE = import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.startsWith("http")
+  ? import.meta.env.VITE_API_URL
+  : import.meta.env.DEV
+    ? "http://localhost:5000/api"
+    : `${window.location.origin}/api`;
+
 const STEPS = ["Cancha", "Horario", "Confirmar"];
 
 export default function SedeReservaForm({ sede, onClose }) {
   const navigate = useNavigate();
   const isConfirmedRef = useRef(false);
+  const isBloqueandoRef = useRef(false); // guard anti-doble-click
   const topRef = useRef(null);
 
   const [step, setStep] = useState(0);
@@ -61,47 +72,84 @@ export default function SedeReservaForm({ sede, onClose }) {
     fetch(); const t = setInterval(fetch, 3000); return () => clearInterval(t);
   }, [escenario, dia, bloqueoId]);
 
-  /* ── Cleanup bloqueo ── */
+  /* ── Cleanup bloqueo al salir/navegar ── */
   useEffect(() => {
     const cleanup = () => {
       if (bloqueoId && !isConfirmedRef.current) {
-        const base = import.meta.env.VITE_API_URL || "/api";
         const tok = localStorage.getItem("token")?.replace(/['"]+/g, "");
-        fetch(`${base}/reservas/${bloqueoId}`, { method: "DELETE", headers: { Authorization: `Bearer ${tok}` }, keepalive: true }).catch(() => {});
+        fetch(`${KEEPALIVE_BASE}/reservas/${bloqueoId}`, { method: "DELETE", headers: { Authorization: `Bearer ${tok}` }, keepalive: true }).catch(() => {});
       }
     };
     window.addEventListener("beforeunload", cleanup);
-    return () => { window.removeEventListener("beforeunload", cleanup); if (bloqueoId && !isConfirmedRef.current) cleanup(); };
+    return () => {
+      window.removeEventListener("beforeunload", cleanup);
+      // Al desmontar el componente, liberar si no fue confirmado
+      if (bloqueoId && !isConfirmedRef.current) {
+        api.delete(`/reservas/${bloqueoId}`).catch(() => {});
+      }
+    };
   }, [bloqueoId]);
 
-  const liberarBloqueo = async () => {
-    if (bloqueoId && !isConfirmedRef.current) { try { await api.delete(`/reservas/${bloqueoId}`); } catch {} setBloqueoId(null); }
+  // Libera el bloqueo activo de forma segura (con estado)
+  const liberarBloqueo = async (idOverride) => {
+    const id = idOverride ?? bloqueoId;
+    if (id && !isConfirmedRef.current) {
+      try { await api.delete(`/reservas/${id}`); } catch {}
+      setBloqueoId(null);
+    }
   };
 
   /* ── Handlers ── */
-  const selDeporte = (d) => {
+  const selDeporte = async (d) => {
     if (d === deporte) return;
-    liberarBloqueo(); setDeporte(d); setEscenario(null); setDia(""); setHoraInicio(""); setError("");
+    await liberarBloqueo();
+    setDeporte(d); setEscenario(null); setDia(""); setHoraInicio(""); setError("");
   };
 
-  const selEscenario = (e) => {
-    liberarBloqueo(); setEscenario(e); setDia(""); setHoraInicio(""); setError("");
+  const selEscenario = async (e) => {
+    await liberarBloqueo();
+    setEscenario(e); setDia(""); setHoraInicio(""); setError("");
     setTimeout(() => goTo(1), 150);
   };
 
-  const selDia = (d) => { liberarBloqueo(); setDia(d); setHoraInicio(""); setError(""); };
+  const selDia = async (d) => {
+    await liberarBloqueo();
+    setDia(d); setHoraInicio(""); setError("");
+  };
 
-  const changeDuracion = async (h) => { liberarBloqueo(); setHoras(h); setHoraInicio(""); setError(""); };
+  const changeDuracion = async (h) => {
+    await liberarBloqueo();
+    setHoras(h); setHoraInicio(""); setError("");
+  };
 
   const selHora = async (slot) => {
+    // Guard: evitar llamadas simultáneas por doble click
+    if (isBloqueandoRef.current) return;
+    isBloqueandoRef.current = true;
     setError("");
     const horaStr = floatToTimeString(slot);
-    if (bloqueoId) { try { await api.delete(`/reservas/${bloqueoId}`); } catch {} setBloqueoId(null); }
+    // Capturar bloqueoId actual antes de limpiar estado
+    const prevBloqueoId = bloqueoId;
+    if (prevBloqueoId) {
+      try { await api.delete(`/reservas/${prevBloqueoId}`); } catch {}
+      setBloqueoId(null);
+    }
     try {
-      const { data } = await api.post("/reservas/bloquear", { sedeId: String(sede._id), escenarioId: String(escenario._id), fecha: dia, horas: Number(horas), horaInicio: horaStr });
-      setBloqueoId(data?._id || data?.id); setHoraInicio(horaStr);
+      const { data } = await api.post("/reservas/bloquear", {
+        sedeId: String(sede._id),
+        escenarioId: String(escenario._id),
+        fecha: dia,
+        horas: Number(horas),
+        horaInicio: horaStr,
+      });
+      setBloqueoId(data?._id || data?.id);
+      setHoraInicio(horaStr);
       setTimeout(() => goTo(2), 200);
-    } catch (e) { setError(e.response?.data?.message || "Esta hora ya fue tomada. Elige otra."); }
+    } catch (e) {
+      setError(e.response?.data?.message || "Esta hora ya fue tomada. Elige otra.");
+    } finally {
+      isBloqueandoRef.current = false;
+    }
   };
 
   const crearReserva = async (tipo) => {

@@ -23,7 +23,7 @@ export default function SedeReservaPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
         {loading && (
           <div className="flex flex-col items-center justify-center h-72">
             <div className="relative w-16 h-16 mb-4">

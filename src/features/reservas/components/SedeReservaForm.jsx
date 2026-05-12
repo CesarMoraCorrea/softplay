@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle, Clock, CreditCard, AlertCircle, DollarSign, MapPin } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, Clock, CreditCard, AlertCircle, DollarSign, MapPin } from "lucide-react";
 import api from "../../../api/axios";
 import { imageUrl } from "../../../utils/imageUrl";
 import { timeStringToFloat, floatToTimeString, generarSlotsHorario, DEPORTE_ICONS } from "../utils/reservaHelpers";

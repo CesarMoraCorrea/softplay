@@ -176,7 +176,7 @@ export default function SedeReservaForm({ sede, onClose }) {
     if (!bloqueoId) { setError("Selecciona una hora primero."); return; }
     setCreating(tipo); setError("");
     try {
-      const { data: resp } = await api.patch(`/reservas/${bloqueoId}/estado`, { estadoPago: tipo === "mercadopago" ? "pagado" : "pendiente" });
+      const { data: resp } = await api.patch(`/reservas/${bloqueoId}/estado`, { estadoPago: tipo === "mercadopago" ? "processing" : "pendiente" });
       if (tipo === "mercadopago") {
         const { data: mp } = await api.post("/payments/intent", { reservaId: resp._id, paymentMethod: "mercadopago" });
         if (mp.init_point) { isConfirmedRef.current = true; setBloqueoId(null); window.location.href = mp.init_point; return; }

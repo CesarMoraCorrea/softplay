@@ -345,8 +345,7 @@ export default function AdminCanchas() {
 
   const handleMpRedirect = async () => {
     try {
-      const redirectUri = window.location.origin + window.location.pathname;
-      const { data } = await api.get('/mercadopago/oauth-url?redirectUri=' + redirectUri);
+      const { data } = await api.get('/payments/mercadopago/oauth/url');
       window.location.href = data.url;
     } catch (e) {
       alert('Error obteniendo URL de vinculación con MercadoPago');

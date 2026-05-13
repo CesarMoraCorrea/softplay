@@ -84,6 +84,11 @@ export default function MisReservas() {
     }
   };
 
+  // Verificar si una reserva puede ser cancelada
+  const canCancelReserva = (reserva) => {
+    return reserva.estado === 'pendiente';
+  };
+
   // Función para obtener el color del estado
   const getStatusColor = (estado) => {
     switch (estado.toLowerCase()) {

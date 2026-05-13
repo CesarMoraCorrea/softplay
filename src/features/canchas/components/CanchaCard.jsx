@@ -12,25 +12,8 @@ const CanchaCard = ({
   onToggleFavorite,
   className = '',
 }) => {
-  const parseEntityId = (value) => {
-    if (!value) return null;
-    if (typeof value === "string") {
-      return value === "[object Object]" ? null : value;
-    }
-    if (typeof value === "object") {
-      if (typeof value.$oid === "string") return value.$oid;
-      if (typeof value.toString === "function") {
-        const result = value.toString();
-        return result && result !== "[object Object]" ? result : null;
-      }
-    }
-    return null;
-  };
-
   const {
     _id,
-    escenarioId,
-    id,
     nombre,
     direccion,
     precioHora,
@@ -115,10 +98,7 @@ const CanchaCard = ({
       <Card.Body>
         {/* Título y calificación */}
         <div className="flex justify-between items-start mb-2">
-          <Link
-            to={reservaId ? `/reservar/${reservaId}` : "/canchas"}
-            state={reservaId ? { cancha } : undefined}
-          >
+          <Link to={`/reservar/${_id}`}>
             <Card.Title className="text-lg hover:text-primary transition-colors">
               {nombre}
             </Card.Title>
@@ -200,9 +180,7 @@ const CanchaCard = ({
 
 CanchaCard.propTypes = {
   cancha: PropTypes.shape({
-    _id: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-    escenarioId: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+    _id: PropTypes.string.isRequired,
     nombre: PropTypes.string.isRequired,
     direccion: PropTypes.string,
     precioHora: PropTypes.number,

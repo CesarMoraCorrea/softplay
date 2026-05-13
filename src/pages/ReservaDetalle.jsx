@@ -10,7 +10,9 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import DashboardLayout from "../layouts/DashboardLayout";
 import Button from "../components/common/Button";
+import PaymentComponent from "../components/PaymentComponent";
 import api from "../api/axios.js";
 
 export default function ReservaDetalle() {

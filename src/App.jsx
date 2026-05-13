@@ -11,6 +11,7 @@ import AdminSistema from "./pages/admin/AdminSistema.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 import { ThemeProvider } from "./contexts/ThemeContext.jsx";
+// Mantenemos la importación de Redux para el ProtectedRoute
 import { useSelector } from "react-redux";
 import LandingPage from "./pages/home/LandingPage.jsx"; 
 

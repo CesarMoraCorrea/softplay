@@ -54,18 +54,11 @@ export default function NuevaReserva() {
     setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   };
 
-  const normalizeId = (value) => {
-    if (!value) return "";
-    if (typeof value === "string") return value.trim();
-    if (typeof value === "object") {
-      if (typeof value.$oid === "string") return value.$oid.trim();
-      if (typeof value.toString === "function") {
-        const parsed = value.toString();
-        return parsed && parsed !== "[object Object]" ? parsed.trim() : "";
-      }
-    }
-    return "";
-  };
+  // Estados del flujo de pago
+  const [reserva, setReserva] = useState(null);
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("");
 
   // Fetch Escenario and Sede on mount
   useEffect(() => {
@@ -301,7 +294,7 @@ export default function NuevaReserva() {
             </div>
           </div>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
@@ -490,6 +483,6 @@ export default function NuevaReserva() {
           )}
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }

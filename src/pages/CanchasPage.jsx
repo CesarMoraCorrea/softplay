@@ -10,7 +10,6 @@ import Button from "../components/common/Button";
 import EmptyState from "../components/common/EmptyState";
 import Modal from "../components/common/Modal";
 import Alert from "../components/common/Alert";
-import Card from "../components/common/Card";
 import GeolocationSearch from "../components/GeolocationSearch";
 import GoogleMapsView from "../components/GoogleMapsView";
 
@@ -137,7 +136,7 @@ const CanchasPage = () => {
   }, [selectedSedeId, selectedSede]);
 
   const handleBusquedaChange = (e) => {
-    setBusqueda(e.target.value); // Captura el texto que escribe el usuario
+    setBusqueda(e.target.value);
   };
 
   const handleFiltrosChange = (nuevosFiltros) => {
@@ -448,7 +447,7 @@ const CanchasPage = () => {
 
       {/* Mensaje de error */}
       {error && (
-        <Alert variant="error" title="Error al cargar sedes" onClose={() => setError(null)}>
+        <Alert variant="error" title="Error al cargar canchas" onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
@@ -550,7 +549,7 @@ const CanchasPage = () => {
       ) : (
         <EmptyState
           icon={<MapPin className="w-8 h-8 text-gray-400 dark:text-gray-300" />}
-          title="No se encontraron sedes"
+          title="No se encontraron canchas"
           description="Prueba ajustar los filtros o la búsqueda para encontrar mejores resultados."
         >
           <Button variant="primary" onClick={limpiarFiltros}>

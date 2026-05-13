@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaRedo, FaShieldAlt, FaSpinner, FaCheckCircle } from 'react-icons/fa';
-import api from '../../api/axios.js';
+import axios from 'axios';
 
 const Captcha = ({ onCaptchaChange, onVerifiedChange, error, disabled = false }) => {
   const [captchaData, setCaptchaData] = useState(null);
@@ -13,7 +13,7 @@ const Captcha = ({ onCaptchaChange, onVerifiedChange, error, disabled = false })
   const generateCaptcha = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/captcha/generate');
+      const response = await axios.get('/api/captcha/generate');
       setCaptchaData(response.data);
       setCaptchaInput('');
       // Notificar al componente padre sobre el cambio
@@ -52,7 +52,7 @@ const Captcha = ({ onCaptchaChange, onVerifiedChange, error, disabled = false })
     setChecking(true);
     debounceRef.current = setTimeout(async () => {
       try {
-        const { data } = await api.post('/captcha/check', {
+        const { data } = await axios.post('/api/captcha/check', {
           captchaId: captchaData.captchaId,
           captchaInput
         });

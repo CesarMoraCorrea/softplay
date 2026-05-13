@@ -302,10 +302,32 @@ const buildSedePayload = (base, escenarios = []) => {
 
 export default function AdminCanchas() {
   const dispatch = useDispatch();
-  const { list: sedes, loading } = useSelector((state) => state.canchas);
+  const { list } = useSelector(s=>s.canchas);
+  const [form, setForm] = useState({ 
+    nombre:"", 
+    descripcion:"", 
+    direccion:"", 
+    precioHora:0, 
+    lat:"", 
+    lng:"", 
+    imagenes:[],
+    tipoCancha: "",
+    servicios: [],
+    horarios: []
+  });
+  const [editingCancha, setEditingCancha] = useState(null);
 
-  const [sedeForm, setSedeForm] = useState(initialSedeForm);
-  const [escenarioForm, setEscenarioForm] = useState(initialEscenarioForm);
+  // Catálogos
+  const tiposCanchas = ["Fútbol 5", "Fútbol 7", "Fútbol 11", "Tenis", "Padel", "Basquet"];
+  const serviciosCatalogo = [
+    { id: "aparcamiento", nombre: "Aparcamiento", icon: <Car className="w-4 h-4" /> },
+    { id: "iluminacion", nombre: "Iluminación", icon: <LightbulbIcon className="w-4 h-4" /> },
+    { id: "vestuarios", nombre: "Vestuarios", icon: <ShoppingBag className="w-4 h-4" /> },
+    { id: "duchas", nombre: "Duchas", icon: <Droplets className="w-4 h-4" /> },
+    { id: "wifi", nombre: "WiFi", icon: <Wifi className="w-4 h-4" /> },
+    { id: "cafeteria", nombre: "Cafetería", icon: <Coffee className="w-4 h-4" /> },
+  ];
+  const horariosDisponibles = ["Mañana (6-12h)", "Tarde (12-18h)", "Noche (18-24h)"];
 
   const [editingSedeId, setEditingSedeId] = useState(null);
   const [selectedSedeId, setSelectedSedeId] = useState(null);
@@ -414,6 +436,7 @@ export default function AdminCanchas() {
       activa: sede.activa ?? true,
       configuracionHorario: sede.configuracionHorario || { horarioPorDia: getDefaultHorario(), intervaloMinutos: 60 }
     });
+    dispatch(fetchCanchas());
   };
 
   const handleDeleteSede = async (e, sedeId) => {
@@ -470,11 +493,6 @@ export default function AdminCanchas() {
     } else {
       escenarios.push(newEscSettings);
     }
-
-    const payload = buildSedePayload(selectedSede, escenarios);
-    await dispatch(updateCancha({ id: selectedSede._id, data: payload }));
-    resetEscenarioForm();
-    await dispatch(fetchCanchas());
   };
 
   const handleEditEscenario = (escenario) => {
@@ -898,5 +916,5 @@ export default function AdminCanchas() {
         </div>
       )}
     </div>
-  );
+  )
 }

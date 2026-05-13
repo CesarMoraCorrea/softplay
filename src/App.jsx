@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { LoginPage, RegisterPage } from "./features/Auth/index.js";
 import CanchasPage from "./pages/CanchasPage.jsx";
 import NuevaReserva from "./pages/NuevaReserva.jsx";
+import SedeReservaPage from "./pages/SedeReservaPage.jsx";
 import MisReservas from "./pages/MisReservas.jsx";
 import ReservaDetalle from "./pages/ReservaDetalle.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -11,7 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 import { ThemeProvider } from "./contexts/ThemeContext.jsx";
 import { useSelector } from "react-redux";
-import Hero from "./pages/home/Hero.jsx"; 
+import LandingPage from "./pages/home/LandingPage.jsx"; 
 
 export default function App() {
   // Mantenemos el acceso al estado de autenticación para las rutas protegidas
@@ -20,7 +21,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/" element={<Navigate to="/canchas" />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
@@ -47,19 +48,28 @@ export default function App() {
         <Route
           path="/home"
           element={
+            <DashboardLayout>
+              <LandingPage />
+            </DashboardLayout>
+          }
+        />
+
+        {/* Reserva por sede (nuevo flujo en cascada) — DEBE ir antes que /reservar/:id */}
+        <Route
+          path="/reservar/sede/:sedeId"
+          element={
             <ProtectedRoute>
-              <DashboardLayout>
-                <Hero />
-              </DashboardLayout>
+              <SedeReservaPage />
             </ProtectedRoute>
           }
         />
 
+        {/* Reserva directa por escenario (flujo existente, deep-link) */}
         <Route
           path="/reservar/:id"
           element={
             <ProtectedRoute>
-                <NuevaReserva />
+              <NuevaReserva />
             </ProtectedRoute>
           }
         />

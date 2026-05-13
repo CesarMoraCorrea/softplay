@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-// import { useSearchParams, useNavigate } from "react-router-dom"; // Not needed for vista state
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Search, Filter, MapPin, Star, X, Map, List, Building2, DollarSign, Calendar, Clock, Tag, Trash2, Radar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,6 +20,7 @@ import api from "../api/axios";
 
 const CanchasPage = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { list: sedes, loading } = useSelector((state) => state.canchas);
 
   // Estado local para errores
@@ -29,7 +30,7 @@ const CanchasPage = () => {
   const [vistaActual, setVistaActual] = useState("mapa"); // 'lista' o 'mapa'
   const [vistaPrevia, setVistaPrevia] = useState("mapa"); // Track view before entering scenarios
   const [selectedSedeId, setSelectedSedeId] = useState(null);
-  const [selectedSede, setSelectedSede] = useState(null); // Para guardar la sede seleccionada
+  const [selectedSede, setSelectedSede] = useState(null);
   const [rangoPreciosGlobal, setRangoPreciosGlobal] = useState({ min: 0, max: 200000 });
   const [filtros, setFiltros] = useState({
     ubicacion: "",
@@ -507,10 +508,13 @@ const CanchasPage = () => {
                           <span className="text-gray-500 dark:text-gray-400">{sede?.ubicacion?.barrio || "Sin barrio"}</span>
                         </div>
 
-                        <div className="mt-auto pt-5">
-                          <Button className="w-full bg-blue-600 hover:bg-blue-700 font-bold shadow-md transform hover:-translate-y-0.5 transition-all" onClick={() => handleVerEscenarios(sede)}>
-                            Ver escenarios disponibles
-                          </Button>
+                        <div className="mt-auto pt-5 flex flex-col gap-2">
+                          <button
+                            onClick={() => navigate(`/reservar/sede/${sede._id}`)}
+                            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md"
+                          >
+                            Reservar aquí
+                          </button>
                         </div>
                       </div>
                     </Card>

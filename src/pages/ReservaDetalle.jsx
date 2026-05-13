@@ -6,6 +6,7 @@ import {
   DollarSign,
   ArrowLeft,
   Tag,
+  MapPin,
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
@@ -17,6 +18,7 @@ export default function ReservaDetalle() {
   const [reserva, setReserva] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     fetchReserva();
@@ -25,6 +27,7 @@ export default function ReservaDetalle() {
   const fetchReserva = async () => {
     try {
       setLoading(true);
+      setImageError(false);
       const { data } = await api.get(`/reservas/${id}`);
       setReserva(data);
     } catch (err) {
@@ -162,10 +165,30 @@ export default function ReservaDetalle() {
 
             {/* BARRA LATERAL (RECIBO) - DERECHA */}
             <div className="bg-gray-50 dark:bg-gray-900 p-6 md:p-8 flex flex-col justify-between border-t md:border-t-0 md:border-l border-dashed border-gray-300 dark:border-gray-700 relative">
-              {/* Semi-círculos de corte de "boleto" (Opcional - visual effect) */}
+              {/* Semi-círculos de corte de "boleto" */}
               <div className="hidden md:block absolute -left-4 top-1/2 w-8 h-8 rounded-full bg-slate-100 dark:bg-gray-800 -mt-4 shadow-inner" />
 
               <div className="space-y-6">
+
+                {/* Imagen de la Cancha/Sede */}
+                <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-200 dark:bg-gray-700 w-full aspect-video relative">
+                  {loading ? (
+                    <div className="w-full h-full animate-pulse bg-gray-300 dark:bg-gray-600" />
+                  ) : reserva?.cancha?.imagen && !imageError ? (
+                    <img
+                      src={reserva.cancha.imagen}
+                      alt={reserva.cancha?.nombre || "Imagen de la cancha"}
+                      className="w-full h-full object-cover"
+                      onError={() => setImageError(true)}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-gray-400 dark:text-gray-500 p-4">
+                      <MapPin className="w-8 h-8" />
+                      <span className="text-xs font-medium text-center">{reserva?.cancha?.nombre || "Cancha"}</span>
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Estado de Reserva</p>
                   <div

@@ -1,195 +1,58 @@
-import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { Calendar, Clock, MapPin, Users, Info, ChevronLeft, ChevronRight, X, CreditCard, AlertCircle, ArrowRight, CheckCircle, Check, Tag, DollarSign, Loader } from "lucide-react";
-import api from "../api/axios.js";
-import { crearReservaThunk } from "../redux/slices/reservasSlice.js";
-import DashboardLayout from "../layouts/DashboardLayout.jsx";
-import Button from "../components/common/Button.jsx";
-import DateTimeSelector from "../components/common/DateTimeSelector.jsx";
-import { imageUrl } from "../utils/imageUrl.js";
-
-// Inicializar MercadoPago (poner public key desde env o texto según disponga el usuario)
+import { useEffect, useState, useMemo, useRef } from "react";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
+import { ArrowLeft, CheckCircle, Clock, CreditCard, AlertCircle, DollarSign, MapPin, ArrowRight } from "lucide-react";
+import api from "../api/axios";
+import { imageUrl } from "../utils/imageUrl";
+import { timeStringToFloat, floatToTimeString, generarSlotsHorario, DEPORTE_ICONS } from "../features/reservas/utils/reservaHelpers";
+import { MiniCalendar, Stepper, SelectionChip } from "../features/reservas/components/ReservaFormParts";
+import DashboardLayout from "../layouts/DashboardLayout";
+import Button from "../components/common/Button";
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY || 'APP_USR-6bcf8da9-9b71-484a-b133-b4666f3de6a6', { locale: 'es-CO' });
 
-// Componente de Step Indicator
-function StepIndicator({ step, totalSteps = 3 }) {
-  const steps = [
-    { number: 1, label: "Detalles" },
-    { number: 2, label: "Revisión" },
-    { number: 3, label: "Confirmación" },
-  ];
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
+const KEEPALIVE_BASE = import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.startsWith("http")
+  ? import.meta.env.VITE_API_URL
+  : import.meta.env.DEV
+    ? "http://localhost:5000/api"
+    : `${window.location.origin}/api`;
 
-  return (
-    <div className="flex justify-center items-center flex-wrap md:flex-nowrap max-w-3xl mx-auto mb-8 gap-y-4">
-      {steps.map((s, idx) => (
-        <div key={s.number} className="flex items-center">
-          <div
-            className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold transition-all duration-300 ${step >= s.number
-              ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg"
-              : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
-              }`}
-          >
-            {step > s.number ? "✓" : s.number}
-          </div>
-          <p
-            className={`ml-2 text-sm font-medium transition-colors duration-300 ${step >= s.number
-              ? "text-blue-600 dark:text-blue-400"
-              : "text-gray-600 dark:text-gray-400"
-              }`}
-          >
-            {s.label}
-          </p>
-          {idx < steps.length - 1 && (
-            <div
-              className={`w-8 sm:w-16 md:w-32 h-1 mx-2 md:mx-4 rounded transition-all duration-300 ${step > s.number ? "bg-blue-600 dark:bg-blue-700" : "bg-gray-300 dark:bg-gray-700"
-                }`}
-            />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// Componente de Image Gallery
-function ImageGallery({ imagenes, nombre }) {
-  const [currentImageIdx, setCurrentImageIdx] = useState(0);
-
-  if (!imagenes || imagenes.length === 0) {
-    return (
-      <div className="w-full h-56 bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-600 rounded-xl flex items-center justify-center">
-        <div className="text-center">
-          <Tag className="w-12 h-12 text-gray-500 mx-auto mb-2" />
-          <p className="text-gray-600 dark:text-gray-400">Sin imágenes</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative w-full">
-      <div className="relative overflow-hidden rounded-xl">
-        <img
-          src={imageUrl(imagenes[currentImageIdx])}
-          alt={`${nombre} ${currentImageIdx + 1}`}
-          className="w-full h-56 object-cover transition-opacity duration-300"
-        />
-      </div>
-
-      {imagenes.length > 1 && (
-        <>
-          <button
-            onClick={() =>
-              setCurrentImageIdx(
-                (prev) => (prev - 1 + imagenes.length) % imagenes.length
-              )
-            }
-            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800 rounded-full p-2 transition-all duration-200 shadow-lg"
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-800 dark:text-white" />
-          </button>
-          <button
-            onClick={() =>
-              setCurrentImageIdx((prev) => (prev + 1) % imagenes.length)
-            }
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800 rounded-full p-2 transition-all duration-200 shadow-lg"
-          >
-            <ChevronRight className="w-5 h-5 text-gray-800 dark:text-white" />
-          </button>
-
-          <div className="flex justify-center gap-2 mt-3">
-            {imagenes.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentImageIdx(idx)}
-                className={`h-2 rounded-full transition-all duration-300 ${idx === currentImageIdx ? "bg-primary w-6" : "bg-gray-300 dark:bg-gray-600 w-2"
-                  }`}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// El componente Modal de Confirmación ha sido eliminado para usar un flujo lineal por Pasos
-
-// Helper Auxiliar para parsear hora (Ej: "06:30" -> 6.5)
-const timeStringToFloat = (timeStr) => {
-  if (!timeStr) return null;
-  const [h, m] = timeStr.split(":").map(Number);
-  return h + (m / 60);
-};
-
-// Helper para re-formatear Float de vuelta a string (Ej: 6.5 -> "06:30")
-const floatToTimeString = (floatHour) => {
-  const h = Math.floor(floatHour);
-  const m = Math.round((floatHour - h) * 60);
-  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
-};
-
-// Generador Dinámico de Bloques de Tiempo en base a la configuración
-const generarSlotsHorario = (cancha, fechaString) => {
-  if (!fechaString || !fechaString.includes("T")) return [];
-  const dateObj = new Date(fechaString.split("T")[0] + "T00:00:00");
-  const dayOfWeek = dateObj.getDay();
-
-  let configGlobal = cancha?.configuracionHorarioSede || {};
-  if (cancha?.usarHorarioPersonalizado && cancha?.configuracionHorario) {
-    configGlobal = cancha.configuracionHorario;
-  }
-
-  const dailyConfig = configGlobal.horarioPorDia?.[dayOfWeek] || { isAbierto: true, apertura: "06:00", cierre: "22:00", descansos: [] };
-
-  if (!dailyConfig.isAbierto) return { cerrado: true, slots: [] };
-
-  const startFloat = timeStringToFloat(dailyConfig.apertura) || 6.0;
-  const endFloat = timeStringToFloat(dailyConfig.cierre) || 22.0;
-  const intervalFloat = (configGlobal.intervaloMinutos || 60) / 60; // 0.5 o 1.0
-
-  const rests = (dailyConfig.descansos || []).map(d => ({
-    start: timeStringToFloat(d.inicio),
-    end: timeStringToFloat(d.fin)
-  }));
-
-  const slots = [];
-  for (let current = startFloat; current < endFloat; current += intervalFloat) {
-    const isResting = rests.some(r => current < r.end && (current + intervalFloat) > r.start);
-    if (!isResting) {
-      slots.push(current);
-    }
-  }
-  return { cerrado: false, slots };
-};
+const STEPS = ["Horario", "Confirmar"];
 
 export default function NuevaReserva() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const dispatch = useDispatch();
 
-  const initialCanchaFromState = location?.state?.cancha || null;
+  const isConfirmedRef = useRef(false);
+  const isBloqueandoRef = useRef(false);
+  const topRef = useRef(null);
 
-  // Estados para la cancha y formulario
-  const [cancha, setCancha] = useState(initialCanchaFromState);
-  const [sede, setSede] = useState(null);
-  const [loading, setLoading] = useState(!initialCanchaFromState);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Estados del formulario de reserva
-  const [fecha, setFecha] = useState("");
+  const [sede, setSede] = useState(null);
+  const [cancha, setCancha] = useState(location?.state?.cancha || null);
+
+  const [step, setStep] = useState(0);
   const [horas, setHoras] = useState(1);
-  const [creatingReserva, setCreatingReserva] = useState(false);
-  const [reserva, setReserva] = useState(null);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [dia, setDia] = useState("");
+  const [horaInicio, setHoraInicio] = useState("");
   const [horasOcupadas, setHorasOcupadas] = useState([]);
+  
   const [bloqueoId, setBloqueoId] = useState(null);
+  const bloqueoIdRef = useRef(null);
+  const [loadingSlot, setLoadingSlot] = useState(null);
+  const [reserva, setReserva] = useState(null);
+  const [creating, setCreating] = useState(null);
   const [mpPreferenceId, setMpPreferenceId] = useState(null);
-  const isConfirmedRef = useRef(false);
+
+  useEffect(() => { bloqueoIdRef.current = bloqueoId; }, [bloqueoId]);
+
+  const goTo = (s) => {
+    setStep(s);
+    setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  };
 
   const normalizeId = (value) => {
     if (!value) return "";
@@ -204,6 +67,7 @@ export default function NuevaReserva() {
     return "";
   };
 
+  // Fetch Escenario and Sede on mount
   useEffect(() => {
     const fetchCancha = async () => {
       try {
@@ -212,292 +76,193 @@ export default function NuevaReserva() {
 
         const stateCancha = location?.state?.cancha || null;
         const stateCanchaId = normalizeId(stateCancha?.escenarioId) || normalizeId(stateCancha?._id);
-        if (stateCancha && stateCanchaId && stateCanchaId === safeId) {
-          setCancha(stateCancha);
-          setError("");
-          // Fetch sede info
-          if (stateCancha.sedeId) {
-            try {
-              const sedeRes = await api.get(`/sedes/${stateCancha.sedeId}`);
-              setSede(sedeRes.data);
-            } catch (e) {
-              console.error("Error fetching sede:", e);
-            }
+        
+        let fetchedCancha = stateCancha;
+
+        if (!(stateCancha && stateCanchaId && stateCanchaId === safeId)) {
+          if (!safeId || safeId === "undefined" || safeId === "null" || safeId === "[object Object]") {
+            throw new Error("Escenario inválido.");
           }
-          setLoading(false);
-          return;
-        }
-
-        if (!safeId || safeId === "undefined" || safeId === "null" || safeId === "[object Object]") {
-          setError("Escenario inválido. Vuelve a seleccionar el escenario.");
-          setCancha(null);
-          setLoading(false);
-          return;
-        }
-
-        try {
-          const { data } = await api.get(`/sedes/escenarios/${encodeURIComponent(safeId)}`);
-          setCancha(data);
-          setError("");
-
-          // Fetch sede info
-          if (data.sedeId) {
-            try {
-              const sedeRes = await api.get(`/sedes/${data.sedeId}`);
-              setSede(sedeRes.data);
-            } catch (e) {
-              console.error("Error fetching sede:", e);
-            }
-          }
-          return;
-        } catch (primaryError) {
-          const { data: escenarios } = await api.get(`/sedes?view=escenarios`);
-          const escenario = Array.isArray(escenarios)
-            ? escenarios.find((item) => {
+          try {
+            const { data } = await api.get(`/sedes/escenarios/${encodeURIComponent(safeId)}`);
+            fetchedCancha = data;
+          } catch (primaryError) {
+            const { data: escenarios } = await api.get(`/sedes?view=escenarios`);
+            const found = Array.isArray(escenarios) && escenarios.find((item) => {
               const currentId = normalizeId(item?.escenarioId) || normalizeId(item?._id);
               return currentId === safeId;
-            })
-            : null;
-
-          if (escenario) {
-            setCancha(escenario);
-            setError("");
-            return;
+            });
+            if (found) fetchedCancha = found;
+            else throw primaryError;
           }
-
-          throw primaryError;
         }
+
+        setCancha(fetchedCancha);
+        if (fetchedCancha?.sedeId) {
+          const sedeRes = await api.get(`/sedes/${fetchedCancha.sedeId}`);
+          setSede(sedeRes.data);
+        }
+        setError("");
       } catch (err) {
-        const backendMessage = err?.response?.data?.message;
-        setError(backendMessage || "Error al cargar la información de la cancha");
-        console.error(err);
+        setError(err.response?.data?.message || err.message || "Error al cargar la información de la cancha");
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) {
-      fetchCancha();
-    }
+    if (id) fetchCancha();
   }, [id, location?.state]);
 
-  // Nuevo Effect: Fetch de horas ocupadas cuando cambia la fecha (Día), la Cancha, o el Bloqueo Propio
-  useEffect(() => {
-    const fetchHorasOcupadas = async () => {
-      const escenarioIdSelected = cancha?.escenarioId || cancha?._id || normalizeId(id);
-      if (!escenarioIdSelected || !fecha) return;
+  const canchaConfig = useMemo(() => cancha && sede ? {
+    configuracionHorarioSede: sede.configuracionHorario,
+    usarHorarioPersonalizado: cancha.usarHorarioPersonalizado,
+    configuracionHorario: cancha.configuracionHorario,
+  } : null, [cancha, sede]);
 
-      try {
-        const queryDate = fecha.split("T")[0];
-        // Inyectamos nuestro bloqueoId para que el backend lo ignore y nuestra selección no salga Roja
-        const url = `/reservas/ocupados/${escenarioIdSelected}?fecha=${queryDate}&ignorarBloqueoId=${bloqueoId || ''}`;
-        const { data } = await api.get(url);
-        setHorasOcupadas(data || []);
-      } catch (err) {
-        console.error("No se pudieron obtener las horas ocupadas", err);
+  const total = (cancha?.precioHora || cancha?.precioPorHora || 0) * horas;
+  const horaFin = horaInicio ? floatToTimeString(timeStringToFloat(horaInicio) + horas) : "";
+
+  const slotsData = useMemo(() =>
+    (canchaConfig && dia) ? generarSlotsHorario(canchaConfig, `${dia}T00:00`) : { cerrado: false, slots: [] }
+  , [canchaConfig, dia]);
+
+  /* ── Polling horas ocupadas ── */
+  useEffect(() => {
+    const escenarioId = cancha?.escenarioId || cancha?._id || normalizeId(id);
+    if (!escenarioId || !dia) { setHorasOcupadas([]); return; }
+    
+    const fetchOcupados = async () => {
+      try { const { data } = await api.get(`/reservas/ocupados/${escenarioId}?fecha=${dia}&ignorarBloqueoId=${bloqueoId || ""}`); setHorasOcupadas(data || []); } catch {}
+    };
+    
+    fetchOcupados(); const t = setInterval(fetchOcupados, 3000); return () => clearInterval(t);
+  }, [cancha, dia, bloqueoId, id]);
+
+  /* ── Cleanup bloqueo al salir/navegar ── */
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const bid = bloqueoIdRef.current;
+      if (bid && !isConfirmedRef.current) {
+        const tok = localStorage.getItem("token")?.replace(/['"]+/g, "");
+        fetch(`${KEEPALIVE_BASE}/reservas/${bid}`, { method: "DELETE", headers: { Authorization: `Bearer ${tok}` }, keepalive: true }).catch(() => {});
       }
     };
-
-    // Primera carga inmediata
-    fetchHorasOcupadas();
-
-    // Polling Automático rápido cada 3 segundos para una UX instantánea
-    const poller = setInterval(() => {
-      fetchHorasOcupadas();
-    }, 3000);
-
-    return () => clearInterval(poller);
-  }, [fecha, cancha, id, bloqueoId]);
-
-  // Nuevo Effect: Liberar reserva si el usuario cierra la ventana o se va de la página
-  useEffect(() => {
-    const handleUnload = () => {
-      if (bloqueoId && !isConfirmedRef.current) {
-        // En un hook unload, navigator.sendBeacon o fetch con keepalive son mejores que axios
-        const origin = window.location.origin.includes('localhost:5173') ? 'http://localhost:5000/api' : '/api';
-        const url = `${origin}/reservas/${bloqueoId}`;
-        const token = localStorage.getItem("token")?.replace(/['"]+/g, '');
-
-        fetch(url, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` },
-          keepalive: true
-        }).catch(err => console.error("Error silencioso liberando al salir:", err));
-      }
-    };
-
-    window.addEventListener("beforeunload", handleUnload);
-
-    // Limpieza al desmontar el componente (navegar a otra página web dentro del SPA de React)
+    window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
-      window.removeEventListener("beforeunload", handleUnload);
-      if (bloqueoId) {
-        handleUnload();
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      const bid = bloqueoIdRef.current;
+      if (bid && !isConfirmedRef.current) {
+        api.delete(`/reservas/${bid}`).catch(() => {});
       }
     };
-  }, [bloqueoId]);
+  }, []);
 
-  const calcularTotal = () => {
-    return (cancha?.precioHora || 0) * Number(horas);
-  };
-
-  const autoBloquearHora = async (fechaSeleccionada, duracionSeleccionada) => {
-    try {
-      if (bloqueoId) {
-        try {
-          await api.delete(`/reservas/${bloqueoId}`);
-        } catch (e) { /* ignorar */ }
-        setBloqueoId(null);
-      }
-
-      const escenarioIdSelected = cancha?.escenarioId || cancha?._id || id;
-      if (!escenarioIdSelected) return;
-
-      const payloadBloqueo = {
-        sedeId: cancha.sedeId,
-        escenarioId: escenarioIdSelected,
-        fecha: fechaSeleccionada,
-        horas: Number(duracionSeleccionada),
-      };
-
-      const response = await api.post("/reservas/bloquear", payloadBloqueo);
-      setBloqueoId(response.data?._id);
-      setError("");
-
-    } catch (e) {
-      setError(e.response?.data?.message || "Esta hora justo acaba de ser tomada por otra persona. Por favor, elige otra.");
-      setFecha(fechaSeleccionada.split("T")[0] + "T00:00"); // Reset back to just the day
-    }
-  };
-
-  const manejarSeleccionFecha = async (nuevaFecha) => {
-    setFecha(nuevaFecha);
-    if (nuevaFecha && nuevaFecha.split("T")[1] !== "00:00") {
-      await autoBloquearHora(nuevaFecha, horas);
-    }
-  };
-
-  const handleDuracionChange = async (newHoras) => {
-    const validHoras = Math.max(1, Math.min(12, newHoras));
-    setHoras(validHoras);
-
-    // Si había una hora seleccionada y cambia la duración, 
-    // soltamos el bloqueo y reseteamos la hora porque las condiciones (y choques) cambiaron
-    if (fecha && fecha.includes("T") && fecha.split("T")[1] !== "00:00") {
-      setFecha(fecha.split("T")[0] + "T00:00");
-      if (bloqueoId) {
-        try {
-          await api.delete(`/reservas/${bloqueoId}`);
-        } catch (e) { /* silent fail */ }
-        setBloqueoId(null);
-      }
-    }
-  };
-
-  const handleContinueToReview = async () => {
-    if (!fecha || !horas || fecha.split("T")[1] === "00:00") {
-      setError("Por favor completa la hora elegida en el paso 3");
-      return;
-    }
-
-    // Si por alguna razón el payload falló
-    if (!bloqueoId) {
-      setError("La sesión expiró o no se pudo reservar. Selecciona nuevamente.");
-      return;
-    }
-
-    setError("");
-    setCurrentStep(2);
-  };
-
-  const clearAndGoBackToStep1 = async () => {
-    setCurrentStep(1);
-    // Eliminar carrito temporal si decidio volver y cancelar explicitamente
-    if (bloqueoId) {
-      try {
-        await api.delete(`/reservas/${bloqueoId}`);
-      } catch (e) { }
+  const liberarBloqueo = () => {
+    const bid = bloqueoIdRef.current;
+    if (bid && !isConfirmedRef.current) {
+      bloqueoIdRef.current = null;
       setBloqueoId(null);
-      setFecha(fecha.split("T")[0] + "T00:00");
+      api.delete(`/reservas/${bid}`).catch(() => {});
     }
   };
 
-  const crearReserva = async (tipoAccion = "pendiente") => {
-    setCreatingReserva(true);
+  /* ── Handlers ── */
+  const selDia = (d) => {
+    liberarBloqueo();
+    setDia(d); setHoraInicio(""); setError("");
+  };
+
+  const changeDuracion = (h) => {
+    liberarBloqueo();
+    setHoras(h); setHoraInicio(""); setError("");
+  };
+
+  const selHora = async (slot) => {
+    if (isBloqueandoRef.current) return;
+    isBloqueandoRef.current = true;
     setError("");
+    setLoadingSlot(slot);
+    const horaStr = floatToTimeString(slot);
+
+    const prevId = bloqueoIdRef.current;
+    bloqueoIdRef.current = null;
+    setBloqueoId(null);
 
     try {
-      // Como ya tenemos una reserva bloqueada real en Mongo con un ID (bloqueoId),
-      // enviamos un PATH al Backend para formalizar su estadoPago
-      if (!bloqueoId) {
-        throw new Error("No hay reserva en el carrito.");
-      }
+      const deletePromise = prevId
+        ? api.delete(`/reservas/${prevId}`).catch(() => {})
+        : Promise.resolve();
 
-      // Si usamos mercadopago la dejamos como pendiente inicialmente y MP nos avisa
-      const payload = tipoAccion === "pagado"
-        ? { estadoPago: "pagado" }
-        : { estadoPago: "pendiente" };
+      const escenarioId = cancha?.escenarioId || cancha?._id || normalizeId(id);
+      
+      const [, { data }] = await Promise.all([
+        deletePromise,
+        api.post("/reservas/bloquear", {
+          sedeId: String(sede._id),
+          escenarioId: String(escenarioId),
+          fecha: dia,
+          horas: Number(horas),
+          horaInicio: horaStr,
+        }),
+      ]);
 
-      const { data: respuesta } = await api.patch(`/reservas/${bloqueoId}/estado`, payload);
-
-      if (respuesta && respuesta._id) {
-        if (tipoAccion === "mercadopago") {
-          try {
-            const { data: mpData } = await api.post("/payments/intent", {
-              reservaId: respuesta._id,
-              paymentMethod: "mercadopago"
-            });
-            if (mpData.preferenceId) {
-              isConfirmedRef.current = true;
-              setBloqueoId(null); // Desvincular de limpieza para no borrar reserva
-              setMpPreferenceId(mpData.preferenceId);
-              return; // Detenemos la vista normal porque mostraremos el Wallet
-            } else {
-              throw new Error("No se pudo obtener la preferencia de MercadoPago.");
-            }
-          } catch (mpErr) {
-            console.error("Error validando mercadopago:", mpErr);
-            throw new Error("Error iniciando MercadoPago: " + (mpErr.response?.data?.message || mpErr.message));
-          }
-        }
-
-        isConfirmedRef.current = true;
-        setBloqueoId(null); // MUY IMPORTANTE: Desvincular de limpieza unload para que no lo borre al salir de la page
-        setReserva(respuesta);
-        setCurrentStep(3);
-        setShowConfirmation(false);
-      } else {
-        setError("Error al crear la reserva");
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || "Error al crear la reserva");
-      console.error(err);
+      const newId = data?._id || data?.id;
+      bloqueoIdRef.current = newId;
+      setBloqueoId(newId);
+      setHoraInicio(horaStr);
+      setTimeout(() => goTo(1), 150);
+    } catch (e) {
+      setError(e.response?.data?.message || "Esta hora ya fue tomada. Elige otra.");
     } finally {
-      setCreatingReserva(false);
+      isBloqueandoRef.current = false;
+      setLoadingSlot(null);
     }
   };
 
-  const handleContinue = () => {
-    navigate("/mis-reservas");
+  const crearReserva = async (tipo) => {
+    if (!bloqueoId) { setError("Selecciona una hora primero."); return; }
+    setCreating(tipo); setError("");
+    try {
+      const { data: resp } = await api.patch(`/reservas/${bloqueoId}/estado`, { estadoPago: tipo === "mercadopago" ? "pagado" : "pendiente" });
+      if (tipo === "mercadopago") {
+        const { data: mp } = await api.post("/payments/intent", { reservaId: resp._id, paymentMethod: "mercadopago" });
+        if (mp.preferenceId) {
+          isConfirmedRef.current = true;
+          setBloqueoId(null);
+          setMpPreferenceId(mp.preferenceId);
+          return;
+        }
+        if (mp.init_point) { isConfirmedRef.current = true; setBloqueoId(null); window.location.href = mp.init_point; return; }
+        throw new Error("No se pudo obtener link de MercadoPago.");
+      }
+      isConfirmedRef.current = true; setBloqueoId(null); setReserva(resp);
+    } catch (e) { setError(e.response?.data?.message || e.message || "Error al crear reserva."); }
+    finally { setCreating(null); }
   };
 
-  const handleFinish = () => {
-    navigate("/canchas");
+  const isOcupado = (slot) => {
+    const end = slot + horas;
+    return horasOcupadas.some(o => { const s = timeStringToFloat(o.horaInicio), e = timeStringToFloat(o.horaFin); return slot < e && end > s; });
   };
 
+  const isPast = (slot) => {
+    if (!dia) return false;
+    const now = new Date(), sel = new Date(dia + "T00:00:00");
+    if (sel.toDateString() !== now.toDateString()) return false;
+    const h = Math.floor(slot), m = Math.round((slot - h) * 60);
+    return h < now.getHours() || (h === now.getHours() && m <= now.getMinutes());
+  };
+
+  /* ── RENDER STATES ── */
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="max-w-5xl mx-auto px-4 py-12">
-          <div className="flex flex-col items-center justify-center h-96">
-            <div className="relative w-20 h-20 mb-6">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary to-blue-500 rounded-full opacity-20 animate-pulse"></div>
-              <div className="absolute inset-2 rounded-full border-4 border-transparent border-t-primary border-r-primary animate-spin"></div>
-            </div>
-            <p className="text-lg text-gray-600 dark:text-gray-400 font-medium">
-              Cargando escenario...
-            </p>
+        <div className="flex flex-col items-center justify-center h-96">
+          <div className="relative w-16 h-16 mb-4">
+            <div className="absolute inset-0 bg-blue-500 rounded-full opacity-20 animate-pulse"></div>
+            <div className="absolute inset-2 rounded-full border-4 border-transparent border-t-blue-600 border-r-blue-600 animate-spin"></div>
           </div>
+          <p className="text-gray-500 font-medium">Cargando escenario...</p>
         </div>
       </DashboardLayout>
     );
@@ -506,548 +271,224 @@ export default function NuevaReserva() {
   if (error && !cancha) {
     return (
       <DashboardLayout>
-        <div className="max-w-5xl mx-auto px-4 py-12">
-          <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/10 rounded-2xl shadow-lg p-8 text-center border border-red-200 dark:border-red-800">
-            <div className="flex justify-center mb-4">
-              <div className="bg-red-200 dark:bg-red-900/40 p-4 rounded-full">
-                <AlertCircle className="w-12 h-12 text-red-600 dark:text-red-400" />
-              </div>
-            </div>
-            <h3 className="text-2xl font-bold text-red-900 dark:text-red-200 mb-2">
-              Error al cargar
-            </h3>
-            <p className="text-red-700 dark:text-red-300 mb-6 max-w-md mx-auto">{error}</p>
-            <Link to="/canchas">
-              <Button>
-                <ArrowRight className="w-4 h-4 mr-2" />
-                Volver a Canchas
-              </Button>
-            </Link>
+        <div className="max-w-2xl mx-auto py-12 px-4">
+          <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-8 text-center border border-red-200">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-red-900 dark:text-red-200 mb-2">Error</h3>
+            <p className="text-red-700 dark:text-red-300 mb-6">{error}</p>
+            <Link to="/canchas"><Button><ArrowLeft className="w-4 h-4 mr-2" /> Volver</Button></Link>
           </div>
         </div>
       </DashboardLayout>
     );
   }
 
+  if (reserva) {
+    const paid = reserva.estadoPago === "pagado";
+    return (
+      <DashboardLayout>
+        <div className="max-w-lg mx-auto py-12 px-4">
+          <div className={`rounded-2xl p-8 text-center border-2 ${paid ? "bg-green-50 dark:bg-green-900/20 border-green-200" : "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200"}`}>
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${paid ? "bg-green-100 dark:bg-green-900/40" : "bg-yellow-100 dark:bg-yellow-900/40"}`}>
+              {paid ? <CheckCircle className="w-8 h-8 text-green-600" /> : <Clock className="w-8 h-8 text-yellow-600" />}
+            </div>
+            <h2 className={`text-2xl font-bold mb-2 ${paid ? "text-green-900 dark:text-green-200" : "text-yellow-900 dark:text-yellow-200"}`}>{paid ? "¡Pago exitoso!" : "¡Reserva separada!"}</h2>
+            <p className={`text-sm mb-4 ${paid ? "text-green-700 dark:text-green-300" : "text-yellow-800 dark:text-yellow-300"}`}>{paid ? "Tu cancha está garantizada ✓" : "Paga en la sede el día de tu reserva."}</p>
+            <p className="font-mono text-lg font-bold text-gray-900 dark:text-white mb-6">#{reserva._id?.slice(-8).toUpperCase()}</p>
+            <div className="flex gap-3">
+              <Link to="/reservas" className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors">Ver Reservas</Link>
+              <Link to="/canchas" className="flex-1 py-3 border-2 border-gray-300 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Volver</Link>
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const img = cancha?.imagenes?.[0] ? imageUrl(cancha.imagenes[0]) : sede?.imagenes?.[0] ? imageUrl(sede.imagenes[0]) : null;
+
+  /* ══════════════════════════════════════════════════
+     RENDER PRINCIPAL
+  ══════════════════════════════════════════════════ */
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <StepIndicator step={currentStep} />
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6" ref={topRef}>
+        
+        {/* Header con tarjeta info */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+          <Link to="/canchas" className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0">
+            <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+          </Link>
+          <div className="flex items-center gap-4 bg-white dark:bg-gray-800 p-3 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 w-full max-w-md">
+            {img 
+              ? <img src={img} className="w-16 h-16 rounded-xl object-cover flex-shrink-0" alt="Cancha" />
+              : <div className="w-16 h-16 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-2xl">{DEPORTE_ICONS[cancha?.tipoDeporte] || "🏟️"}</div>
+            }
+            <div className="min-w-0">
+              <h1 className="text-base font-bold text-gray-900 dark:text-white truncate">{cancha?.nombre}</h1>
+              <p className="text-xs text-gray-500 truncate">{sede?.nombre}</p>
+              {sede?.ubicacion?.direccion && <p className="text-xs text-gray-400 flex items-center gap-1 truncate mt-0.5"><MapPin className="w-3 h-3 flex-shrink-0"/>{sede.ubicacion.direccion}</p>}
+            </div>
+          </div>
+        </div>
 
-        {!reserva ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Panel Izquierdo - Info del Escenario (Solo en Paso 1) */}
-            {currentStep === 1 && (
-              <div className="lg:col-span-1 space-y-6 order-2 lg:order-1">
-                {/* Card del Escenario */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
-                  {/* Galería de imágenes */}
-                  <div className="mb-5">
-                    <ImageGallery imagenes={cancha?.imagenes} nombre={cancha?.nombre} />
-                  </div>
+        <div className="max-w-4xl mx-auto">
+          <Stepper current={step} steps={STEPS} />
 
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                    {cancha?.nombre}
-                  </h2>
+          {(dia || horaInicio) && (
+            <div className="flex flex-wrap gap-2 mb-5">
+              {dia && <SelectionChip label={new Date(dia + "T00:00:00").toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "short" })} onEdit={() => { setDia(""); setHoraInicio(""); liberarBloqueo(); goTo(0); }} />}
+              {horaInicio && <SelectionChip label={`${horaInicio} – ${horaFin} (${horas}h)`} onEdit={() => { setHoraInicio(""); liberarBloqueo(); goTo(0); }} />}
+            </div>
+          )}
 
-                  {/* Información rápida */}
-                  <div className="space-y-3 mb-5">
-                    {cancha?.tipoCancha && (
-                      <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                        <Tag className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                        <span className="text-sm text-blue-900 dark:text-blue-200 font-medium">
-                          {cancha.tipoCancha}
-                        </span>
-                      </div>
-                    )}
+          {/* ══ PASO 0: Horario ══ */}
+          {step === 0 && (
+            <div className="animate-fadeIn">
+              <div className="mb-6">
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Duración</p>
+                <div className="flex flex-wrap gap-2">
+                  {[1, 1.5, 2, 3, 4].map(h => (
+                    <button key={h} onClick={() => changeDuracion(h)}
+                      className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${horas === h
+                        ? "bg-blue-600 text-white shadow-md scale-105"
+                        : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400 hover:bg-blue-50"
+                      }`}>
+                      {h === 1 ? "1 hora" : h === 1.5 ? "1h 30min" : `${h} horas`}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                    {cancha?.direccion && (
-                      <div className="flex items-start gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                        <MapPin className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-green-900 dark:text-green-200">
-                          {cancha.direccion}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-primary/10 to-blue-100/10 dark:from-primary/20 dark:to-blue-900/20 rounded-lg border border-primary/20">
-                      <DollarSign className="w-5 h-5 text-primary flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Precio por hora</p>
-                        <p className="text-lg font-bold text-primary">
-                          ${cancha?.precioHora?.toLocaleString("es-AR") || 0}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {cancha?.descripcion && (
-                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                        {cancha.descripcion}
-                      </p>
-                    </div>
-                  )}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Fecha</p>
+                  <MiniCalendar value={dia} onChange={selDia} />
                 </div>
 
-                {/* Card de la Sede */}
-                {sede && (
-                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl shadow-lg p-6 border border-purple-100 dark:border-purple-800">
-                    <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-200 mb-3">
-                      Sede
-                    </h3>
-                    <p className="text-sm font-medium text-purple-800 dark:text-purple-300 mb-2">
-                      {sede.nombre}
-                    </p>
-                    {sede.servicios && sede.servicios.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {sede.servicios.slice(0, 3).map((servicio, idx) => (
-                          <span
-                            key={idx}
-                            className="text-xs bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-200 px-2 py-1 rounded-full"
-                          >
-                            {servicio}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Panel Derecho - Formulario de Reserva */}
-            <div className={`transition-all duration-300 order-1 lg:order-2 ${currentStep === 1 ? 'lg:col-span-2' : 'lg:col-span-3 max-w-5xl mx-auto w-full'}`}>
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-700">
-                {currentStep === 1 && (
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
-                    Completa tu Reserva
-                  </h3>
-                )}
-                {/* STEP 1: Selección de Detalles */}
-                {currentStep === 1 && (
-                  <div className="space-y-8 animate-fadeIn">
-                    {/* Duración */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Clock className="w-5 h-5 text-primary" />
-                          1. Selecciona la Duración de tu Reserva
-                        </div>
-                      </label>
-                      <div className="grid grid-cols-3 sm:flex flex-wrap gap-2 mb-4">
-                        {[1, 1.5, 2, 3, 4, 5].map((h) => (
-                          <button
-                            key={h}
-                            onClick={() => handleDuracionChange(h)}
-                            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${horas === h
-                              ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg scale-105"
-                              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                              }`}
-                          >
-                            {h}h
-                          </button>
-                        ))}
-                      </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">
+                    Hora de inicio
+                    {dia && horasOcupadas.length > 0 && <span className="text-orange-400 font-normal normal-case ml-2 tracking-normal">• Algunos horarios ocupados</span>}
+                  </p>
+                  {!dia ? (
+                    <div className="flex flex-col items-center justify-center h-52 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-400 gap-2">
+                      <span className="text-3xl">📅</span>
+                      <p className="text-sm">Elige una fecha para ver los horarios</p>
                     </div>
-
-                    {/* Fecha y Hora */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Calendar className="w-5 h-5 text-primary" />
-                          2. Elige Fecha
-                        </div>
-                      </label>
-                      <DateTimeSelector
-                        value={fecha}
-                        onChange={manejarSeleccionFecha}
-                      />
-                    </div>
-
-                    {/* 3. Selección de Hora Independiente */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Clock className="w-5 h-5 text-primary" />
-                          3. Selecciona hora de inicio
-                        </div>
-                        {horasOcupadas.length > 0 && (
-                          <p className="text-xs font-normal text-orange-600 dark:text-orange-400 mt-1">
-                            Existen reservas para este día. Los horarios que cruzan con tu duración están deshabilitados.
-                          </p>
-                        )}
-                      </label>
-
-                      {fecha && fecha.includes("T") ? (() => {
-                        const horarioData = generarSlotsHorario(cancha, fecha);
-
-                        if (horarioData.cerrado) {
-                          return (
-                            <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-6 text-center border-2 border-dashed border-red-200 dark:border-red-900/50">
-                              <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-2 opacity-50" />
-                              <p className="text-red-600 dark:text-red-400 font-semibold mb-1">Cerrado este día</p>
-                              <p className="text-xs text-red-500 dark:text-red-300">La cancha o sede no preste servicios en el día seleccionado. Intenta con otra fecha.</p>
-                            </div>
-                          );
-                        }
-
-                        if (horarioData.slots.length === 0) {
-                          return (
-                            <div className="bg-orange-50 dark:bg-orange-900/20 rounded-2xl p-6 text-center border border-orange-200 dark:border-orange-900/50">
-                              <p className="text-orange-600 dark:text-orange-400 font-semibold mb-1">Cerrado este día</p>
-                              <p className="text-xs text-orange-500 dark:text-orange-300">No hay horarios disponibles configurados para prestrar servicio hoy.</p>
-                            </div>
-                          );
-                        }
-
+                  ) : slotsData.cerrado ? (
+                    <div className="flex items-center justify-center h-40 rounded-2xl bg-gray-50 border border-gray-200 text-gray-500">Sede cerrada este día</div>
+                  ) : slotsData.slots.length === 0 ? (
+                    <div className="flex items-center justify-center h-40 rounded-2xl bg-gray-50 border border-gray-200 text-gray-500">Sin horarios configurados</div>
+                  ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {slotsData.slots.map(slot => {
+                        const oc = isOcupado(slot), past = isPast(slot), hs = floatToTimeString(slot);
+                        const isLoading = loadingSlot === slot;
+                        const dis = oc || past || (loadingSlot !== null && !isLoading);
                         return (
-                          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-inner border border-gray-100 dark:border-gray-700">
-                            <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2">
-                              {horarioData.slots.map((h) => {
-                                const now = new Date();
-                                const selectedDateObj = new Date(fecha.split("T")[0] + "T00:00:00");
-                                const isTodayLocal = selectedDateObj.getDate() === now.getDate() &&
-                                  selectedDateObj.getMonth() === now.getMonth() &&
-                                  selectedDateObj.getFullYear() === now.getFullYear();
-
-                                const hInt = Math.floor(h);
-                                const hMins = Math.round((h - hInt) * 60);
-                                const isPastHour = isTodayLocal && (hInt < now.getHours() || (hInt === now.getHours() && hMins <= now.getMinutes()));
-
-                                // Check de Choque Temporal 
-                                const startPropuesto = h;
-                                const endPropuesto = h + horas;
-                                const isOccupied = horasOcupadas.some(ocupada => {
-                                  const [hOcStart, m1] = ocupada.horaInicio.split(":").map(Number);
-                                  const [hOcEnd, m2] = ocupada.horaFin.split(":").map(Number);
-                                  const ocStart = hOcStart + (m1 / 60);
-                                  const ocEnd = hOcEnd + (m2 / 60);
-                                  return (startPropuesto < ocEnd && endPropuesto > ocStart);
-                                });
-
-                                const isDisabled = isPastHour || isOccupied;
-
-                                const horaExactaStr = floatToTimeString(h);
-                                const isSelected = fecha.split("T")[1] === horaExactaStr;
-
-                                return (
-                                  <button
-                                    key={h}
-                                    disabled={isDisabled}
-                                    onClick={() => {
-                                      if (!isDisabled) {
-                                        const baseString = fecha.split("T")[0];
-                                        manejarSeleccionFecha(`${baseString}T${horaExactaStr}`);
-                                      }
-                                    }}
-                                    className={`px-2 py-3 rounded-xl font-semibold text-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${isOccupied
-                                      ? "opacity-60 cursor-not-allowed bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 line-through decoration-red-500"
-                                      : isPastHour
-                                        ? "opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-600"
-                                        : isSelected
-                                          ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg scale-105"
-                                          : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                                      }`}
-                                  >
-                                    {horaExactaStr}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
+                          <button key={slot} disabled={dis || isLoading} onClick={() => selHora(slot)}
+                            className={`py-3 rounded-xl text-sm font-semibold transition-all relative ${
+                              isLoading ? "bg-blue-600 text-white scale-105 shadow-lg cursor-wait" :
+                              oc ? "bg-red-50 dark:bg-red-900/10 text-red-300 dark:text-red-700 line-through cursor-not-allowed text-xs" :
+                              past ? "bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed" :
+                              dis ? "opacity-40 cursor-not-allowed bg-white border border-gray-200 text-gray-400" :
+                              "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:scale-105 hover:shadow-md"
+                            }`}>
+                            {isLoading
+                              ? <span className="flex items-center justify-center gap-1">
+                                  <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                                  </svg>
+                                  {hs}
+                                </span>
+                              : hs}
+                          </button>
                         );
-                      })() : (
-                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-8 text-center border-2 border-dashed border-gray-200 dark:border-gray-700">
-                          <p className="text-gray-500 dark:text-gray-400">Por favor, selecciona primero un día en el paso 2.</p>
-                        </div>
-                      )}
+                      })}
                     </div>
-
-
-
-                    {/* Resumen de Reserva y Costo */}
-                    <div className="hidden sm:block bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border-2 border-blue-200 dark:border-blue-800 transition-all duration-300">
-                      <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-                        <Check className="w-5 h-5 text-green-500" />
-                        Resumen de tu Selección
-                      </h4>
-
-                      <div className="space-y-3 mb-4 pb-4 border-b border-blue-200 dark:border-blue-800/50">
-                        <div className="flex justify-between items-center bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
-                          <span className="text-gray-600 dark:text-gray-400 font-medium">Día</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">
-                            {fecha ? new Date(fecha.split("T")[0] + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", month: "short", day: "numeric" }) : "-"}
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between items-center bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
-                          <span className="text-gray-600 dark:text-gray-400 font-medium">Horario</span>
-                          <span className={`font-semibold ${fecha && fecha.includes("T") && fecha.split("T")[1] !== "00:00" ? "text-blue-600 dark:text-blue-400" : "text-gray-400"}`}>
-                            {fecha && fecha.includes("T") && fecha.split("T")[1] !== "00:00" ? (
-                              (() => {
-                                const validStartTime = fecha.split("T")[1];
-                                const [h, m] = validStartTime.split(":").map(Number);
-                                const endH = h + Math.floor(horas);
-                                const endM = m + (horas % 1) * 60;
-                                const endString = `${endH.toString().padStart(2, '0')}:${endM === 0 ? '00' : '30'}`;
-                                return `${validStartTime} hasta ${endString}`;
-                              })()
-                            ) : "Esperando selección..."}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-600 dark:text-gray-400">Precio por hora</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">
-                            ${cancha?.precioHora?.toLocaleString("es-AR") || 0}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-600 dark:text-gray-400">Duración</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">
-                            {horas} {horas === 1 ? "hora" : "horas"}
-                          </span>
-                        </div>
-                        <div className="border-t-2 border-blue-300 dark:border-blue-700 pt-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-lg font-bold text-gray-900 dark:text-white">
-                              Total
-                            </span>
-                            <span className="text-3xl font-bold text-primary">
-                              ${calcularTotal().toLocaleString("es-AR")}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Error message */}
-                    {error && (
-                      <div className="bg-red-100 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl p-4 animate-shake">
-                        <div className="flex items-start gap-3">
-                          <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                          <p className="text-red-800 dark:text-red-300 text-sm">{error}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Botón Continuar */}
-                    <Button
-                      onClick={handleContinueToReview}
-                      disabled={!fecha || !horas || (fecha && !fecha.includes("T")) || (fecha && fecha.split("T")[1] === "00:00")}
-                      className="w-full py-4 text-base sm:text-lg font-semibold flex items-center justify-center gap-2 sticky bottom-4 z-10 shadow-xl sm:static sm:shadow-none"
-                      size="lg"
-                    >
-                      <span className="sm:hidden">
-                        Continuar (${calcularTotal().toLocaleString("es-AR")})
-                      </span>
-                      <span className="hidden sm:inline">
-                        Continuar a Revisión
-                      </span>
-                      <ArrowRight className="w-5 h-5" />
-                    </Button>
-                  </div>
-                )}
-
-                {/* STEP 2: Revisión y Pago Simulado */}
-                {currentStep === 2 && (
-                  <div className="space-y-4 md:space-y-8 animate-fadeIn">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-3 md:p-8 border border-blue-100 dark:border-blue-800 text-center">
-                      <CheckCircle className="w-8 h-8 md:w-16 md:h-16 text-blue-500 mx-auto mb-2 md:mb-4" />
-                      <h3 className="text-lg md:text-2xl font-bold text-blue-900 dark:text-blue-100 mb-1">Detalles de Reserva</h3>
-                      <p className="text-xs md:text-base text-blue-700 dark:text-blue-300 max-w-md mx-auto hidden sm:block">
-                        Revisa tu selección. En este momento tu cancha se encuentra bloqueada a tu nombre para que nadie más la tome mientras finalizas.
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
-                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 md:p-5 border border-gray-100 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Sede</p>
-                        <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-lg line-clamp-2">{sede?.nombre || cancha?.sedeId?.nombre || "No especificada"}</p>
-                      </div>
-                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 md:p-5 border border-gray-100 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Escenario</p>
-                        <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-lg line-clamp-1">
-                          {cancha?.nombre?.includes("-") ? cancha.nombre.split("-").pop().trim() : cancha?.nombre}
-                        </p>
-                      </div>
-                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 md:p-5 border border-gray-100 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Día</p>
-                        <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-lg leading-tight capitalize">
-                          {fecha ? new Date(fecha.split("T")[0] + "T00:00:00").toLocaleDateString("es-AR", { weekday: "short", month: "short", day: "numeric" }) : ""}
-                        </p>
-                      </div>
-                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 md:p-5 border border-gray-100 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Hora</p>
-                        <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-lg">
-                          {fecha && fecha.includes("T") ? (
-                            (() => {
-                              const validStartTime = fecha.split("T")[1];
-                              const [h, m] = validStartTime.split(":").map(Number);
-                              const endH = h + Math.floor(horas);
-                              const endM = m + (horas % 1) * 60;
-                              const endString = `${endH.toString().padStart(2, '0')}:${endM === 0 ? '00' : '30'}`;
-                              return `${validStartTime}-${endString}`;
-                            })()
-                          ) : ""}
-                        </p>
-                      </div>
-
-                      <div className="col-span-2 lg:col-span-4 bg-gradient-to-br from-primary/10 to-blue-500/10 dark:from-primary/20 dark:to-blue-500/20 rounded-xl p-4 md:p-6 border border-primary/20 flex flex-row justify-between items-center mt-1">
-                        <div className="text-left">
-                          <p className="text-xs sm:text-sm text-primary font-medium">Monto Total</p>
-                        </div>
-                        <p className="font-bold text-primary text-2xl md:text-4xl">
-                          ${calcularTotal().toLocaleString("es-AR")}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Botonera Step 2 */}
-                    <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 md:gap-4 pt-3 md:pt-6 mt-2 border-t border-gray-200 dark:border-gray-700">
-                      {!mpPreferenceId ? (
-                        <>
-                          <Button
-                            onClick={() => setCurrentStep(1)}
-                            disabled={creatingReserva}
-                            variant="outline"
-                            className="py-2 md:py-4 font-semibold text-sm md:text-base w-full sm:w-1/4"
-                          >
-                            Atrás
-                          </Button>
-                          <Button
-                            onClick={() => crearReserva("pendiente")}
-                            disabled={creatingReserva}
-                            className="py-2 md:py-4 font-bold text-sm md:text-lg w-full sm:w-1/3 bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-600 dark:hover:bg-yellow-700 flex items-center justify-center gap-1 md:gap-2"
-                          >
-                            {creatingReserva ? "..." : "Reservar"}
-                          </Button>
-                          <Button
-                            onClick={() => crearReserva("mercadopago")}
-                            disabled={creatingReserva}
-                            className="col-span-2 py-3 md:py-4 font-bold text-sm md:text-lg w-full sm:flex-1 flex items-center justify-center gap-1 md:gap-2 shadow-lg text-white"
-                            style={{ backgroundColor: '#009ee3' }}
-                          >
-                            {creatingReserva ? "Procesando..." : "MercadoPago"}
-                            <CreditCard className="w-4 h-4 md:w-6 md:h-6" />
-                          </Button>
-                        </>
-                      ) : (
-                        <div className="col-span-2 sm:w-full flex flex-col items-center py-4 bg-white dark:bg-transparent rounded-lg">
-                          <div className="w-full max-w-sm">
-                            <Wallet 
-                              initialization={{ 
-                                preferenceId: mpPreferenceId, 
-                                marketplace: true, // Si false no renderiza correctamente algunos estilos embedded en SDK nuevos
-                                redirectMode: 'modal' // Forzamos modal para evitar redirecciones y problemas cross-site en Chrome local
-                              }} 
-                              customization={{ texts: { valueProp: 'security_details' } }} 
-                              onReady={() => console.log('Brick Wallet listo')}
-                              onError={(err) => console.error('Error en Brick Wallet:', err)}
-                              onSubmit={() => console.log('Pago iniciado en Wallet')}
-                            />
-                          </div>
-                          <Button onClick={() => setMpPreferenceId(null)} variant="outline" className="mt-4 text-xs font-semibold">Cancelar e ir atrás</Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Success Screen */
-          <div className="max-w-2xl mx-auto">
-            <div className={`rounded-2xl shadow-xl p-4 md:p-12 text-center border-2 ${reserva?.estadoPago === "pagado"
-              ? "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800"
-              : "bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-yellow-200 dark:border-yellow-800"
-              }`}>
-
-              <div className="flex justify-center mb-4 md:mb-8">
-                <div className="relative">
-                  {reserva?.estadoPago === "pagado" ? (
-                    <>
-                      <div className="absolute inset-0 bg-green-400 rounded-full opacity-20 animate-pulse scale-150"></div>
-                      <div className="relative bg-green-100 dark:bg-green-900/40 p-3 md:p-6 rounded-full">
-                        <CheckCircle className="w-10 h-10 md:w-16 md:h-16 text-green-600 dark:text-green-400" />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="absolute inset-0 bg-yellow-400 rounded-full opacity-20 animate-pulse scale-150"></div>
-                      <div className="relative bg-yellow-100 dark:bg-yellow-900/40 p-3 md:p-6 rounded-full">
-                        <Clock className="w-10 h-10 md:w-16 md:h-16 text-yellow-600 dark:text-yellow-400" />
-                      </div>
-                    </>
                   )}
                 </div>
               </div>
 
-              <h3 className={`text-2xl md:text-4xl font-bold mb-2 md:mb-3 mt-2 md:mt-4 ${reserva?.estadoPago === "pagado" ? "text-green-900 dark:text-green-200" : "text-yellow-900 dark:text-yellow-200"}`}>
-                {reserva?.estadoPago === "pagado" ? "¡Pago Exitoso!" : "¡Reserva Separada!"}
-              </h3>
-              <p className={`text-sm md:text-lg mb-4 md:mb-8 max-w-md mx-auto ${reserva?.estadoPago === "pagado" ? "text-green-700 dark:text-green-300" : "text-yellow-800 dark:text-yellow-300"}`}>
-                {reserva?.estadoPago === "pagado"
-                  ? "Tu pago simulado ha sido procesado y tienes tu cancha garantizada al 100%."
-                  : "Tu reserva fue aislada. Por favor acércate a la sede puntualmente para tu pago."}
-              </p>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-8">
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-2 md:p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
-                  <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-0.5">Escenario Elegido</p>
-                  <p className="font-semibold text-gray-900 dark:text-white text-xs md:text-sm line-clamp-1">
-                    {cancha?.nombre?.includes("-") ? cancha.nombre.split("-").pop().trim() : cancha?.nombre}
-                  </p>
+              {error && (
+                <div className="flex items-center gap-2 mt-5 bg-red-50 border border-red-200 rounded-xl p-3">
+                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                  <p className="text-sm text-red-700">{error}</p>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-2 md:p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
-                  <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-0.5">Estado</p>
-                  {reserva?.estadoPago === "pagado" ? (
-                    <p className="font-bold text-green-600 dark:text-green-400 text-xs md:text-base">✅ Pagado</p>
-                  ) : (
-                    <p className="font-bold text-yellow-600 dark:text-yellow-400 text-xs md:text-base">⏳ Pendiente</p>
-                  )}
-                </div>
-                <div className="col-span-2 md:col-span-1 bg-gradient-to-br from-primary/10 to-blue-100/10 dark:from-primary/20 dark:to-blue-900/20 rounded-xl p-3 md:p-4 border border-primary/30 shadow-sm">
-                  <p className="text-xs text-primary mb-0.5">{reserva?.estadoPago === "pagado" ? "Total Pagado" : "A Pagar en Sitio"}</p>
-                  <p className="font-bold text-primary text-xl md:text-lg">
-                    ${calcularTotal().toLocaleString("es-AR")}
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 dark:bg-gray-800 border-l-4 border-gray-400 rounded-lg p-3 md:p-4 mb-4 md:mb-8 text-left">
-                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
-                  <span className="font-semibold">🎟️ Ticket:</span>{" "}
-                  <span className="font-mono font-bold text-gray-900 dark:text-white">{reserva?._id?.slice(-8).toUpperCase()}</span>
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 md:flex md:flex-row md:gap-4">
-                <Button
-                  onClick={handleContinue}
-                  className="py-2 md:py-3 text-xs md:text-base flex items-center justify-center gap-1 md:gap-2"
-                >
-                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
-                  <span className="hidden sm:inline">Ver Mis Reservas</span>
-                  <span className="sm:hidden">Ver Reservas</span>
-                </Button>
-                <Button
-                  onClick={handleFinish}
-                  variant="outline"
-                  className="py-2 md:py-3 text-xs md:text-base"
-                >
-                  <span className="hidden sm:inline">Buscar Más Escenarios</span>
-                  <span className="sm:hidden">Buscar Más</span>
-                </Button>
-              </div>
+              )}
             </div>
-          </div>
-        )}
+          )}
 
+          {/* ══ PASO 1: Confirmar ══ */}
+          {step === 1 && (
+            <div className="animate-fadeIn max-w-lg mx-auto">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-5 shadow-sm">
+                <div className="p-5 space-y-2.5">
+                  {[
+                    { label: "Sede", value: sede?.nombre },
+                    { label: "Cancha", value: cancha?.nombre },
+                    { label: "Deporte", value: cancha?.tipoDeporte || "No especificado" },
+                    { label: "Fecha", value: dia ? new Date(dia + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" }) : "" },
+                    { label: "Horario", value: horaInicio && horaFin ? `${horaInicio} → ${horaFin}` : "" },
+                    { label: "Duración", value: horas === 1 ? "1 hora" : horas === 1.5 ? "1h 30min" : `${horas} horas` },
+                  ].map(r => (
+                    <div key={r.label} className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700/50 last:border-0">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">{r.label}</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white text-right ml-4 capitalize">{r.value}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5"><DollarSign className="w-4 h-4 text-blue-500" />Total a pagar</span>
+                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">${total.toLocaleString("es-AR")}</span>
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <div className="flex items-center gap-2 mb-4 bg-red-50 border border-red-200 rounded-xl p-3">
+                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              )}
+
+              {!mpPreferenceId ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button disabled={!!creating} onClick={() => crearReserva("pendiente")}
+                    className="py-4 rounded-xl font-bold text-white bg-yellow-500 hover:bg-yellow-600 transition-colors disabled:opacity-60 text-sm">
+                    {creating === "pendiente" ? "Procesando..." : "Reservar · Pagar en sede"}
+                  </button>
+                  <button disabled={!!creating} onClick={() => crearReserva("mercadopago")}
+                    className="py-4 rounded-xl font-bold text-white transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm"
+                    style={{ backgroundColor: "#009ee3" }}>
+                    <CreditCard className="w-4 h-4" />
+                    {creating === "mercadopago" ? "Procesando..." : "Pagar con MercadoPago"}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center py-4 bg-white dark:bg-transparent rounded-lg">
+                  <div className="w-full max-w-sm">
+                    <Wallet
+                      initialization={{
+                        preferenceId: mpPreferenceId,
+                        marketplace: true,
+                        redirectMode: 'modal'
+                      }}
+                      customization={{ texts: { valueProp: 'security_details' } }}
+                      onReady={() => console.log('Brick Wallet listo')}
+                      onError={(err) => console.error('Error en Brick Wallet:', err)}
+                      onSubmit={() => console.log('Pago iniciado en Wallet')}
+                    />
+                  </div>
+                  <button onClick={() => setMpPreferenceId(null)} className="mt-4 text-xs font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 underline">
+                    Cancelar
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );

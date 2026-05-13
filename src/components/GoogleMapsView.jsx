@@ -70,11 +70,22 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, onVerEscenarios, userLoc
     if (cancha?.isSede) return null;
     const escenarioId = parseEntityId(cancha?.escenarioId);
     if (escenarioId) return escenarioId;
-
     const fallbackId = parseEntityId(cancha?._id) || parseEntityId(cancha?.id);
     const looksLikeEscenario = Boolean(cancha?.tipoCancha) || cancha?.precioHora != null;
     return looksLikeEscenario ? fallbackId : null;
   };
+
+  // Devuelve la URL de reserva correcta según el tipo de item
+  const getReservaUrl = (cancha) => {
+    if (cancha?.isSede) {
+      const sedeId = parseEntityId(cancha?._id);
+      return sedeId ? `/reservar/sede/${sedeId}` : null;
+    }
+    const escId = getReservaId(cancha);
+    return escId ? `/reservar/${escId}` : null;
+  };
+
+  const puedeReservar = (cancha) => !!getReservaUrl(cancha) || !!onVerEscenarios;
 
   const obtenerHorarioHoy = (horarios) => {
     if (!horarios) return "Horario no disponible";
@@ -259,16 +270,14 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, onVerEscenarios, userLoc
 
   // Manejar click en marcador
   const handleMarkerClick = (cancha) => {
-    const reservaId = getReservaId(cancha);
-    // Redirigir directamente a la página de reserva solo si es un escenario reservable
-    if (reservaId) {
-      navigate(`/reservar/${reservaId}`);
+    const url = getReservaUrl(cancha);
+    if (url && cancha?.isSede === false) {
+      // Escenario: navegar directo
+      navigate(url);
       return;
     }
-
+    // Sede o item sin URL: mostrar popup
     if (onCanchaSelect) onCanchaSelect(cancha);
-
-    // Close any existing card IMMEDIATELY to avoid it being dragged during pan
     setSelectedCancha(null);
 
     // Pan the map FIRST, then show the card AFTER it settles
@@ -428,7 +437,7 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, onVerEscenarios, userLoc
           title: cancha?.nombre || "Cancha",
           content: markerEl,
         });
-        marker.addListener("click", () => {
+        marker.addListener("gmp-click", () => {
           handleMarkerClick(cancha);
         });
       } else {
@@ -525,18 +534,14 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, onVerEscenarios, userLoc
 
                         <button
                           onClick={() => {
-                            const reservaId = getReservaId(cancha);
-                            if (onCanchaSelect) onCanchaSelect(cancha);
-                            if (reservaId) {
-                              window.open(`/reservar/${reservaId}`, "_blank");
-                            } else if (onVerEscenarios) {
-                              onVerEscenarios(cancha);
-                            }
+                            const url = getReservaUrl(cancha);
+                            if (url) { navigate(url); }
+                            else if (onVerEscenarios) onVerEscenarios(cancha);
                           }}
                           className="w-full text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={!getReservaId(cancha) && !onVerEscenarios}
+                          disabled={!puedeReservar(cancha)}
                         >
-                          {getReservaId(cancha) ? "Reservar" : "Ver escenarios"}
+                          {cancha?.isSede ? "Reservar aquí" : getReservaId(cancha) ? "Reservar" : "Ver escenarios"}
                         </button>
                       </div>
                     </div>
@@ -732,18 +737,14 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, onVerEscenarios, userLoc
                   <button
                     onClick={(e) => {
                       e.preventDefault();
-                      const reservaId = getReservaId(selectedCancha);
-                      if (onCanchaSelect) onCanchaSelect(selectedCancha);
-                      if (reservaId) {
-                        window.open(`/reservar/${reservaId}`, "_blank");
-                      } else if (onVerEscenarios) {
-                        onVerEscenarios(selectedCancha);
-                      }
+                      const url = getReservaUrl(selectedCancha);
+                      if (url) { navigate(url); }
+                      else if (onVerEscenarios) onVerEscenarios(selectedCancha);
                     }}
                     className="w-full mt-1 flex items-center justify-center py-2.5 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 transform hover:-translate-y-0.5 active:scale-95 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={!getReservaId(selectedCancha) && !onVerEscenarios}
+                    disabled={!puedeReservar(selectedCancha)}
                   >
-                    {getReservaId(selectedCancha) ? "Reservar ahora" : "Ver escenarios disponibles"}
+                    {selectedCancha?.isSede ? "Reservar aquí" : getReservaId(selectedCancha) ? "Reservar ahora" : "Ver escenarios disponibles"}
                   </button>
                 </div>
 

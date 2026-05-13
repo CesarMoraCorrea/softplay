@@ -35,14 +35,22 @@ const slice = createSlice({
   reducers: {},
   extraReducers: b=>{
     b.addCase(fetchCanchas.pending, s=>{s.loading=true;})
-     .addCase(fetchCanchas.fulfilled, (s,{payload})=>{ s.loading=false; s.list=payload; })
+     .addCase(fetchCanchas.fulfilled, (s,{payload})=>{
+       s.loading=false;
+       // Guard: asegurar que siempre se almacene un array, nunca un objeto de error
+       s.list = Array.isArray(payload) ? payload : [];
+       if (!Array.isArray(payload)) {
+         console.error('[canchasSlice] fetchCanchas devolvió algo que no es un array:', payload);
+       }
+     })
      .addCase(fetchCanchas.rejected, s=>{s.loading=false;})
      .addCase(updateCancha.fulfilled, (s,{payload})=>{
+       if (!Array.isArray(s.list)) s.list = [];
        const index = s.list.findIndex(c => c._id === payload._id || c.sedeId === payload._id);
        if (index !== -1) s.list[index] = payload;
      })
      .addCase(deleteCancha.fulfilled, (s,{payload})=>{
-       s.list = s.list.filter(c => c._id !== payload && c.sedeId !== payload);
+       s.list = Array.isArray(s.list) ? s.list.filter(c => c._id !== payload && c.sedeId !== payload) : [];
      });
   }
 });

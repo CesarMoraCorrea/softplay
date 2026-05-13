@@ -52,6 +52,13 @@ const CanchasPage = () => {
     api.get("/sedes")
       .then(res => {
         const data = res.data;
+
+        // Guard: si el backend devuelve algo que no es array, no hacer nada
+        if (!Array.isArray(data)) {
+          console.error('[CanchasPage] /sedes no devolvió un array:', data);
+          return;
+        }
+
         setSedesBase(data);
 
         // Compute global min/max price dynamically

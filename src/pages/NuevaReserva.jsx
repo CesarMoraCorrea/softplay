@@ -7,6 +7,8 @@ import { timeStringToFloat, floatToTimeString, generarSlotsHorario, DEPORTE_ICON
 import { MiniCalendar, Stepper, SelectionChip } from "../features/reservas/components/ReservaFormParts";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Button from "../components/common/Button";
+import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
+initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY || 'APP_USR-6bcf8da9-9b71-484a-b133-b4666f3de6a6', { locale: 'es-CO' });
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 const KEEPALIVE_BASE = import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.startsWith("http")
@@ -43,6 +45,7 @@ export default function NuevaReserva() {
   const [loadingSlot, setLoadingSlot] = useState(null);
   const [reserva, setReserva] = useState(null);
   const [creating, setCreating] = useState(null);
+  const [mpPreferenceId, setMpPreferenceId] = useState(null);
 
   useEffect(() => { bloqueoIdRef.current = bloqueoId; }, [bloqueoId]);
 
@@ -223,6 +226,12 @@ export default function NuevaReserva() {
       const { data: resp } = await api.patch(`/reservas/${bloqueoId}/estado`, { estadoPago: tipo === "mercadopago" ? "pagado" : "pendiente" });
       if (tipo === "mercadopago") {
         const { data: mp } = await api.post("/payments/intent", { reservaId: resp._id, paymentMethod: "mercadopago" });
+        if (mp.preferenceId) {
+          isConfirmedRef.current = true;
+          setBloqueoId(null);
+          setMpPreferenceId(mp.preferenceId);
+          return;
+        }
         if (mp.init_point) { isConfirmedRef.current = true; setBloqueoId(null); window.location.href = mp.init_point; return; }
         throw new Error("No se pudo obtener link de MercadoPago.");
       }
@@ -444,18 +453,39 @@ export default function NuevaReserva() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button disabled={!!creating} onClick={() => crearReserva("pendiente")}
-                  className="py-4 rounded-xl font-bold text-white bg-yellow-500 hover:bg-yellow-600 transition-colors disabled:opacity-60 text-sm">
-                  {creating === "pendiente" ? "Procesando..." : "Reservar · Pagar en sede"}
-                </button>
-                <button disabled={!!creating} onClick={() => crearReserva("mercadopago")}
-                  className="py-4 rounded-xl font-bold text-white transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm"
-                  style={{ backgroundColor: "#009ee3" }}>
-                  <CreditCard className="w-4 h-4" />
-                  {creating === "mercadopago" ? "Redirigiendo..." : "Pagar con MercadoPago"}
-                </button>
-              </div>
+              {!mpPreferenceId ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button disabled={!!creating} onClick={() => crearReserva("pendiente")}
+                    className="py-4 rounded-xl font-bold text-white bg-yellow-500 hover:bg-yellow-600 transition-colors disabled:opacity-60 text-sm">
+                    {creating === "pendiente" ? "Procesando..." : "Reservar · Pagar en sede"}
+                  </button>
+                  <button disabled={!!creating} onClick={() => crearReserva("mercadopago")}
+                    className="py-4 rounded-xl font-bold text-white transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm"
+                    style={{ backgroundColor: "#009ee3" }}>
+                    <CreditCard className="w-4 h-4" />
+                    {creating === "mercadopago" ? "Procesando..." : "Pagar con MercadoPago"}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center py-4 bg-white dark:bg-transparent rounded-lg">
+                  <div className="w-full max-w-sm">
+                    <Wallet
+                      initialization={{
+                        preferenceId: mpPreferenceId,
+                        marketplace: true,
+                        redirectMode: 'modal'
+                      }}
+                      customization={{ texts: { valueProp: 'security_details' } }}
+                      onReady={() => console.log('Brick Wallet listo')}
+                      onError={(err) => console.error('Error en Brick Wallet:', err)}
+                      onSubmit={() => console.log('Pago iniciado en Wallet')}
+                    />
+                  </div>
+                  <button onClick={() => setMpPreferenceId(null)} className="mt-4 text-xs font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 underline">
+                    Cancelar
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

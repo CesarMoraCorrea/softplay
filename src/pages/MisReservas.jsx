@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   FiCalendar,
   FiClock,
@@ -9,20 +9,57 @@ import {
   FiAlertCircle,
   FiX,
   FiMapPin,
-  FiRefreshCw
+  FiRefreshCw,
+  FiCheckCircle,
 } from "react-icons/fi";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import { misReservasThunk, cancelarReservaThunk } from "../redux/slices/reservasSlice.js";
+import api from "../api/axios";
 
 export default function MisReservas() {
   const dispatch = useDispatch();
+  const location = useLocation();
   const { list, loading } = useSelector(s => s.reservas);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [reservaToCancel, setReservaToCancel] = useState(null);
   const [canceling, setCanceling] = useState(false);
+  const [mpAlert, setMpAlert] = useState(null); // { type: 'success'|'failure'|'pending', message }
 
-  useEffect(() => { dispatch(misReservasThunk()); }, [dispatch]);
+  // Leer query params de retorno de MercadoPago
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const status = params.get("status");
+    const reservaId = params.get("reservaId");
+
+    if (!status) return;
+
+    const checkPaymentStatus = async () => {
+      if (reservaId) {
+        try {
+          const { data } = await api.get(`/payments/mercadopago/status/${reservaId}`);
+          if (data.estadoPago === "pagado") {
+            setMpAlert({ type: "success", message: "¡Pago acreditado! Tu reserva está confirmada." });
+          } else if (status === "failure") {
+            setMpAlert({ type: "failure", message: "El pago fue rechazado. Puedes intentarlo de nuevo." });
+          } else {
+            setMpAlert({ type: "pending", message: "Tu pago está en proceso. Te notificaremos cuando se confirme." });
+          }
+        } catch {
+          if (status === "success") setMpAlert({ type: "success", message: "Pago realizado. Actualizando estado..." });
+          else if (status === "failure") setMpAlert({ type: "failure", message: "El pago fue rechazado." });
+          else setMpAlert({ type: "pending", message: "Pago en proceso." });
+        }
+      } else {
+        if (status === "success") setMpAlert({ type: "success", message: "¡Pago acreditado! Tu reserva está confirmada." });
+        else if (status === "failure") setMpAlert({ type: "failure", message: "El pago fue rechazado." });
+        else setMpAlert({ type: "pending", message: "Tu pago está en proceso." });
+      }
+      dispatch(misReservasThunk());
+    };
+
+    checkPaymentStatus();
+  }, [location.search, dispatch]);
 
   // Función para manejar la cancelación de reserva
   const handleCancelReserva = (reserva) => {
@@ -73,6 +110,18 @@ export default function MisReservas() {
 
   return (
     <div className="space-y-6">
+      {/* Alerta de retorno MercadoPago */}
+      {mpAlert && (
+        <div className={`flex items-center gap-3 p-4 rounded-xl border font-medium text-sm
+          ${mpAlert.type === "success" ? "bg-green-50 dark:bg-green-900/30 border-green-300 text-green-800 dark:text-green-300" :
+            mpAlert.type === "failure" ? "bg-red-50 dark:bg-red-900/30 border-red-300 text-red-800 dark:text-red-300" :
+            "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-300 text-yellow-800 dark:text-yellow-300"}`}>
+          {mpAlert.type === "success" ? <FiCheckCircle className="w-5 h-5 shrink-0" /> : <FiAlertCircle className="w-5 h-5 shrink-0" />}
+          <span>{mpAlert.message}</span>
+          <button className="ml-auto" onClick={() => setMpAlert(null)}><FiX className="w-4 h-4" /></button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

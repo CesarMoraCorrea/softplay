@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, CheckCircle, Clock, CreditCard, AlertCircle, DollarSign, MapPin } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, Clock, CreditCard, AlertCircle, DollarSign, MapPin, Loader2, X } from "lucide-react";
 import api from "../../../api/axios";
 import { imageUrl } from "../../../utils/imageUrl";
 import { timeStringToFloat, floatToTimeString, generarSlotsHorario, DEPORTE_ICONS } from "../utils/reservaHelpers";
@@ -37,6 +37,9 @@ export default function SedeReservaForm({ sede, onClose }) {
   const [reserva, setReserva] = useState(null);
   const [creating, setCreating] = useState(null);
   const [error, setError] = useState("");
+  const [mpWaiting, setMpWaiting] = useState(false); // modal espera MP
+  const [mpReservaId, setMpReservaId] = useState(null);
+  const mpPollRef = useRef(null); // interval del polling
 
   // Mantiene el ref siempre sincronizado con el estado
   useEffect(() => { bloqueoIdRef.current = bloqueoId; }, [bloqueoId]);
@@ -179,13 +182,36 @@ export default function SedeReservaForm({ sede, onClose }) {
       const { data: resp } = await api.patch(`/reservas/${bloqueoId}/estado`, { estadoPago: tipo === "mercadopago" ? "processing" : "pendiente" });
       if (tipo === "mercadopago") {
         const { data: mp } = await api.post("/payments/intent", { reservaId: resp._id, paymentMethod: "mercadopago" });
-        if (mp.init_point) { isConfirmedRef.current = true; setBloqueoId(null); window.location.href = mp.init_point; return; }
-        throw new Error("No se pudo obtener link de MercadoPago.");
+        const checkoutUrl = mp.sandbox_init_point || mp.init_point;
+        if (!checkoutUrl) throw new Error("No se pudo obtener link de MercadoPago.");
+
+        // Abrir MP en ventana nueva y empezar polling
+        isConfirmedRef.current = true;
+        setBloqueoId(null);
+        setMpReservaId(resp._id);
+        setMpWaiting(true);
+        window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+
+        // Polling cada 3 s hasta confirmar pago
+        mpPollRef.current = setInterval(async () => {
+          try {
+            const { data: status } = await api.get(`/payments/mercadopago/status/${resp._id}`);
+            if (status.estadoPago === "pagado") {
+              clearInterval(mpPollRef.current);
+              setMpWaiting(false);
+              setReserva(status);
+            }
+          } catch {}
+        }, 3000);
+        return;
       }
       isConfirmedRef.current = true; setBloqueoId(null); setReserva(resp);
     } catch (e) { setError(e.response?.data?.message || e.message || "Error al crear reserva."); }
     finally { setCreating(null); }
   };
+
+  // Limpiar el polling al desmontar
+  useEffect(() => () => { if (mpPollRef.current) clearInterval(mpPollRef.current); }, []);
 
   const isOcupado = (slot) => {
     const end = slot + horas;
@@ -200,21 +226,118 @@ export default function SedeReservaForm({ sede, onClose }) {
     return h < now.getHours() || (h === now.getHours() && m <= now.getMinutes());
   };
 
+  /* ── MODAL ESPERA MERCADOPAGO ── */
+  if (mpWaiting) {
+    return (
+      <div className="max-w-lg mx-auto py-8">
+        <div className="rounded-2xl p-8 text-center border-2 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
+          <div className="w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center mx-auto mb-5">
+            <Loader2 className="w-10 h-10 text-blue-600 dark:text-blue-400 animate-spin" />
+          </div>
+          <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-200 mb-2">Esperando confirmación de pago</h2>
+          <p className="text-sm text-blue-700 dark:text-blue-300 mb-1">
+            Se abrió la ventana de MercadoPago. Completa el pago allí y esta pantalla se actualizará automáticamente.
+          </p>
+          <p className="text-xs text-blue-500 dark:text-blue-400 mb-6">
+            Si la ventana no se abrió,{" "}
+            <button
+              className="underline font-semibold"
+              onClick={async () => {
+                try {
+                  const { data: mp } = await api.get(`/payments/mercadopago/status/${mpReservaId}`);
+                  const { data: pref } = await api.post("/payments/intent", { reservaId: mpReservaId, paymentMethod: "mercadopago" });
+                  const url = pref.sandbox_init_point || pref.init_point;
+                  if (url) window.open(url, "_blank", "noopener,noreferrer");
+                } catch {}
+              }}
+            >
+              haz clic aquí para abrirla de nuevo
+            </button>
+            .
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate("/reservas")}
+              className="flex-1 py-3 border-2 border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 rounded-xl font-bold hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors"
+            >
+              Ver mis reservas
+            </button>
+            <button
+              onClick={() => {
+                if (mpPollRef.current) clearInterval(mpPollRef.current);
+                setMpWaiting(false);
+                setMpReservaId(null);
+                isConfirmedRef.current = false;
+              }}
+              className="flex-1 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   /* ── SUCCESS ── */
   if (reserva) {
     const paid = reserva.estadoPago === "pagado";
+    const fechaStr = reserva.fecha
+      ? new Date(reserva.fecha + "T00:00:00").toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+      : null;
     return (
       <div className="max-w-lg mx-auto py-8">
-        <div className={`rounded-2xl p-8 text-center border-2 ${paid ? "bg-green-50 dark:bg-green-900/20 border-green-200" : "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200"}`}>
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${paid ? "bg-green-100 dark:bg-green-900/40" : "bg-yellow-100 dark:bg-yellow-900/40"}`}>
-            {paid ? <CheckCircle className="w-8 h-8 text-green-600" /> : <Clock className="w-8 h-8 text-yellow-600" />}
+        <div className={`rounded-2xl p-8 text-center border-2 ${paid ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700" : "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200"}`}>
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 ${paid ? "bg-green-100 dark:bg-green-900/40" : "bg-yellow-100 dark:bg-yellow-900/40"}`}>
+            {paid ? <CheckCircle className="w-10 h-10 text-green-600" /> : <Clock className="w-10 h-10 text-yellow-600" />}
           </div>
-          <h2 className={`text-2xl font-bold mb-2 ${paid ? "text-green-900 dark:text-green-200" : "text-yellow-900 dark:text-yellow-200"}`}>{paid ? "¡Pago exitoso!" : "¡Reserva separada!"}</h2>
-          <p className={`text-sm mb-4 ${paid ? "text-green-700 dark:text-green-300" : "text-yellow-800 dark:text-yellow-300"}`}>{paid ? "Tu cancha está garantizada ✓" : "Paga en la sede el día de tu reserva."}</p>
-          <p className="font-mono text-lg font-bold text-gray-900 dark:text-white mb-6">#{reserva._id?.slice(-8).toUpperCase()}</p>
+          <h2 className={`text-2xl font-bold mb-1 ${paid ? "text-green-900 dark:text-green-200" : "text-yellow-900 dark:text-yellow-200"}`}>
+            {paid ? "¡Reserva y pago confirmados!" : "¡Reserva separada!"}
+          </h2>
+          <p className={`text-sm mb-5 ${paid ? "text-green-700 dark:text-green-300" : "text-yellow-800 dark:text-yellow-300"}`}>
+            {paid ? "Tu cancha está garantizada. ¡Nos vemos en la cancha!" : "Paga en la sede el día de tu reserva."}
+          </p>
+
+          {/* Detalles de la reserva */}
+          <div className={`rounded-xl p-4 mb-5 text-left space-y-2 ${paid ? "bg-green-100/60 dark:bg-green-900/30" : "bg-yellow-100/60 dark:bg-yellow-900/30"}`}>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3">Detalle de tu reserva</p>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 dark:text-gray-400">N° Reserva</span>
+              <span className="font-mono font-bold text-gray-900 dark:text-white">#{(reserva.reservaId || reserva._id)?.slice(-8).toUpperCase()}</span>
+            </div>
+            {fechaStr && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Fecha</span>
+                <span className="font-semibold text-gray-900 dark:text-white capitalize">{fechaStr}</span>
+              </div>
+            )}
+            {reserva.horaInicio && reserva.horaFin && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Horario</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{reserva.horaInicio} – {reserva.horaFin}</span>
+              </div>
+            )}
+            {reserva.total && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Total pagado</span>
+                <span className="font-bold text-gray-900 dark:text-white">${Number(reserva.total).toLocaleString("es-CO")}</span>
+              </div>
+            )}
+            {paid && reserva.transactionId && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Operación MP</span>
+                <span className="font-mono text-xs text-gray-700 dark:text-gray-300">#{reserva.transactionId}</span>
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-3">
-            <button onClick={() => navigate("/reservas")} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors">Ver Mis Reservas</button>
-            <button onClick={onClose} className="flex-1 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Otra Reserva</button>
+            <button onClick={() => navigate("/reservas")} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors">
+              Ver Mis Reservas
+            </button>
+            <button onClick={onClose} className="flex-1 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              Otra Reserva
+            </button>
           </div>
         </div>
       </div>

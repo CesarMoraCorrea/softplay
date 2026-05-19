@@ -12,7 +12,8 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 import { ThemeProvider } from "./contexts/ThemeContext.jsx";
 import { useSelector } from "react-redux";
-import LandingPage from "./pages/home/LandingPage.jsx"; 
+import LandingPage from "./pages/home/LandingPage.jsx";
+import PagoResultado from "./pages/PagoResultado.jsx";
 
 export default function App() {
   // Mantenemos el acceso al estado de autenticación para las rutas protegidas
@@ -125,6 +126,16 @@ export default function App() {
               <DashboardLayout>
                 <AdminSistema />
               </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Resultado de pago MercadoPago — protegida, sin DashboardLayout para full-screen */}
+        <Route
+          path="/pago-resultado"
+          element={
+            <ProtectedRoute>
+              <PagoResultado />
             </ProtectedRoute>
           }
         />

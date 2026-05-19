@@ -283,7 +283,7 @@ export default function SedeReservaForm({ sede, onClose }) {
   if (reserva) {
     const paid = reserva.estadoPago === "pagado";
     const fechaStr = reserva.fecha
-      ? new Date(reserva.fecha + "T00:00:00").toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+      ? new Date(String(reserva.fecha).slice(0, 10) + "T12:00:00").toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
       : null;
     return (
       <div className="max-w-lg mx-auto py-8">

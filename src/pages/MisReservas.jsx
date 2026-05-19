@@ -24,7 +24,8 @@ export default function MisReservas() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [reservaToCancel, setReservaToCancel] = useState(null);
   const [canceling, setCanceling] = useState(false);
-  const [mpAlert, setMpAlert] = useState(null); // { type: 'success'|'failure'|'pending', message }
+  const [mpReturn, setMpReturn] = useState(null); // { type: 'success'|'failure'|'pending', message }
+  const [mpReturnReservaId, setMpReturnReservaId] = useState(null);
 
   // Leer query params de retorno de MercadoPago
   useEffect(() => {
@@ -35,25 +36,26 @@ export default function MisReservas() {
     if (!status) return;
 
     const checkPaymentStatus = async () => {
+      setMpReturnReservaId(reservaId || null);
       if (reservaId) {
         try {
           const { data } = await api.get(`/payments/mercadopago/status/${reservaId}`);
           if (data.estadoPago === "pagado") {
-            setMpAlert({ type: "success", message: "¡Pago acreditado! Tu reserva está confirmada." });
+            setMpReturn({ type: "success", message: "¡Pago acreditado! Tu reserva está confirmada." });
           } else if (status === "failure") {
-            setMpAlert({ type: "failure", message: "El pago fue rechazado. Puedes intentarlo de nuevo." });
+            setMpReturn({ type: "failure", message: "El pago fue rechazado. Puedes intentarlo de nuevo." });
           } else {
-            setMpAlert({ type: "pending", message: "Tu pago está en proceso. Te notificaremos cuando se confirme." });
+            setMpReturn({ type: "pending", message: "Tu pago está en proceso. Te notificaremos cuando se confirme." });
           }
         } catch {
-          if (status === "success") setMpAlert({ type: "success", message: "Pago realizado. Actualizando estado..." });
-          else if (status === "failure") setMpAlert({ type: "failure", message: "El pago fue rechazado." });
-          else setMpAlert({ type: "pending", message: "Pago en proceso." });
+          if (status === "success") setMpReturn({ type: "success", message: "Pago realizado. Actualizando estado..." });
+          else if (status === "failure") setMpReturn({ type: "failure", message: "El pago fue rechazado." });
+          else setMpReturn({ type: "pending", message: "Pago en proceso." });
         }
       } else {
-        if (status === "success") setMpAlert({ type: "success", message: "¡Pago acreditado! Tu reserva está confirmada." });
-        else if (status === "failure") setMpAlert({ type: "failure", message: "El pago fue rechazado." });
-        else setMpAlert({ type: "pending", message: "Tu pago está en proceso." });
+        if (status === "success") setMpReturn({ type: "success", message: "¡Pago acreditado! Tu reserva está confirmada." });
+        else if (status === "failure") setMpReturn({ type: "failure", message: "El pago fue rechazado." });
+        else setMpReturn({ type: "pending", message: "Tu pago está en proceso." });
       }
       dispatch(misReservasThunk());
     };
@@ -108,17 +110,87 @@ export default function MisReservas() {
     });
   };
 
+  const mpReserva = mpReturnReservaId ? list.find(r => r._id === mpReturnReservaId) : null;
+
   return (
     <div className="space-y-6">
-      {/* Alerta de retorno MercadoPago */}
-      {mpAlert && (
-        <div className={`flex items-center gap-3 p-4 rounded-xl border font-medium text-sm
-          ${mpAlert.type === "success" ? "bg-green-50 dark:bg-green-900/30 border-green-300 text-green-800 dark:text-green-300" :
-            mpAlert.type === "failure" ? "bg-red-50 dark:bg-red-900/30 border-red-300 text-red-800 dark:text-red-300" :
-            "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-300 text-yellow-800 dark:text-yellow-300"}`}>
-          {mpAlert.type === "success" ? <FiCheckCircle className="w-5 h-5 shrink-0" /> : <FiAlertCircle className="w-5 h-5 shrink-0" />}
-          <span>{mpAlert.message}</span>
-          <button className="ml-auto" onClick={() => setMpAlert(null)}><FiX className="w-4 h-4" /></button>
+      {/* Retorno de pago MercadoPago */}
+      {mpReturn && (
+        <div className={`rounded-2xl border-2 overflow-hidden shadow-lg
+          ${mpReturn.type === "success" ? "border-green-300 dark:border-green-600" :
+            mpReturn.type === "failure" ? "border-red-300 dark:border-red-600" :
+            "border-yellow-300 dark:border-yellow-600"}`}>
+
+          {/* Header */}
+          <div className={`px-6 py-5 flex items-center gap-4
+            ${mpReturn.type === "success" ? "bg-green-50 dark:bg-green-900/30" :
+              mpReturn.type === "failure" ? "bg-red-50 dark:bg-red-900/30" :
+              "bg-yellow-50 dark:bg-yellow-900/30"}`}>
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0
+              ${mpReturn.type === "success" ? "bg-green-100 dark:bg-green-800" :
+                mpReturn.type === "failure" ? "bg-red-100 dark:bg-red-800" :
+                "bg-yellow-100 dark:bg-yellow-800"}`}>
+              {mpReturn.type === "success"
+                ? <FiCheckCircle className="w-6 h-6 text-green-600 dark:text-green-300" />
+                : <FiAlertCircle className={`w-6 h-6 ${mpReturn.type === "failure" ? "text-red-600 dark:text-red-300" : "text-yellow-600 dark:text-yellow-300"}`} />}
+            </div>
+            <div className="flex-1">
+              <h3 className={`text-lg font-bold
+                ${mpReturn.type === "success" ? "text-green-800 dark:text-green-200" :
+                  mpReturn.type === "failure" ? "text-red-800 dark:text-red-200" :
+                  "text-yellow-800 dark:text-yellow-200"}`}>
+                {mpReturn.type === "success" ? "¡Reserva confirmada!" : mpReturn.type === "failure" ? "Pago no completado" : "Pago en proceso"}
+              </h3>
+              <p className={`text-sm mt-0.5
+                ${mpReturn.type === "success" ? "text-green-700 dark:text-green-300" :
+                  mpReturn.type === "failure" ? "text-red-700 dark:text-red-300" :
+                  "text-yellow-700 dark:text-yellow-300"}`}>
+                {mpReturn.message}
+              </p>
+            </div>
+            <button
+              onClick={() => { setMpReturn(null); setMpReturnReservaId(null); }}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            >
+              <FiX className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Detalles de la reserva (solo éxito) */}
+          {mpReturn.type === "success" && mpReserva && (
+            <div className="px-6 py-4 bg-white dark:bg-gray-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
+                <span className="font-semibold text-gray-900 dark:text-white text-base">{mpReserva.cancha?.nombre}</span>
+                <div className="flex items-center gap-1.5">
+                  <FiCalendar className="w-4 h-4 text-blue-500" />
+                  <span className="capitalize">{formatDate(mpReserva.fecha)}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <FiClock className="w-4 h-4 text-purple-500" />
+                  <span>{mpReserva.horaInicio} – {mpReserva.horaFin}</span>
+                </div>
+                <span className="font-bold text-gray-900 dark:text-white">${mpReserva.total?.toLocaleString('es-AR')}</span>
+              </div>
+              <Link to={`/reservas/${mpReserva._id}`}>
+                <Button size="sm" className="whitespace-nowrap">Ver detalle</Button>
+              </Link>
+            </div>
+          )}
+
+          {/* Acciones para fallo */}
+          {mpReturn.type === "failure" && (
+            <div className="px-6 py-4 bg-white dark:bg-gray-800 flex items-center gap-3">
+              <Link to="/canchas">
+                <Button size="sm" variant="outline">Volver a canchas</Button>
+              </Link>
+              <button
+                onClick={() => { setMpReturn(null); setMpReturnReservaId(null); }}
+                className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          )}
         </div>
       )}
 

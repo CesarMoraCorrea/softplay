@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
-import { ArrowLeft, CheckCircle, Clock, CreditCard, AlertCircle, DollarSign, MapPin, ArrowRight } from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock, CreditCard, AlertCircle, DollarSign, MapPin, ArrowRight, Loader2 } from "lucide-react";
 import api from "../api/axios";
 import { imageUrl } from "../utils/imageUrl";
 import { timeStringToFloat, floatToTimeString, generarSlotsHorario, DEPORTE_ICONS } from "../features/reservas/utils/reservaHelpers";
@@ -46,6 +46,9 @@ export default function NuevaReserva() {
   const [reserva, setReserva] = useState(null);
   const [creating, setCreating] = useState(null);
   const [mpPreferenceId, setMpPreferenceId] = useState(null);
+  const [mpWaiting, setMpWaiting] = useState(false);
+  const [mpReservaId, setMpReservaId] = useState(null);
+  const mpPollRef = useRef(null);
 
   useEffect(() => { bloqueoIdRef.current = bloqueoId; }, [bloqueoId]);
 
@@ -223,22 +226,36 @@ export default function NuevaReserva() {
     if (!bloqueoId) { setError("Selecciona una hora primero."); return; }
     setCreating(tipo); setError("");
     try {
-      const { data: resp } = await api.patch(`/reservas/${bloqueoId}/estado`, { estadoPago: tipo === "mercadopago" ? "pagado" : "pendiente" });
+      const { data: resp } = await api.patch(`/reservas/${bloqueoId}/estado`, { estadoPago: tipo === "mercadopago" ? "processing" : "pendiente" });
       if (tipo === "mercadopago") {
         const { data: mp } = await api.post("/payments/intent", { reservaId: resp._id, paymentMethod: "mercadopago" });
-        if (mp.preferenceId) {
-          isConfirmedRef.current = true;
-          setBloqueoId(null);
-          setMpPreferenceId(mp.preferenceId);
-          return;
-        }
-        if (mp.init_point) { isConfirmedRef.current = true; setBloqueoId(null); window.location.href = mp.init_point; return; }
-        throw new Error("No se pudo obtener link de MercadoPago.");
+        const checkoutUrl = mp.sandbox_init_point || mp.init_point;
+        if (!checkoutUrl) throw new Error("No se pudo obtener link de MercadoPago.");
+
+        isConfirmedRef.current = true;
+        setBloqueoId(null);
+        setMpReservaId(resp._id);
+        setMpWaiting(true);
+        window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+
+        mpPollRef.current = setInterval(async () => {
+          try {
+            const { data: status } = await api.get(`/payments/mercadopago/status/${resp._id}`);
+            if (status.estadoPago === "pagado") {
+              clearInterval(mpPollRef.current);
+              setMpWaiting(false);
+              setReserva(status);
+            }
+          } catch {}
+        }, 3000);
+        return;
       }
       isConfirmedRef.current = true; setBloqueoId(null); setReserva(resp);
     } catch (e) { setError(e.response?.data?.message || e.message || "Error al crear reserva."); }
     finally { setCreating(null); }
   };
+
+  useEffect(() => () => { if (mpPollRef.current) clearInterval(mpPollRef.current); }, []);
 
   const isOcupado = (slot) => {
     const end = slot + horas;
@@ -277,6 +294,28 @@ export default function NuevaReserva() {
             <h3 className="text-xl font-bold text-red-900 dark:text-red-200 mb-2">Error</h3>
             <p className="text-red-700 dark:text-red-300 mb-6">{error}</p>
             <Link to="/canchas"><Button><ArrowLeft className="w-4 h-4 mr-2" /> Volver</Button></Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (mpWaiting) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-lg mx-auto py-12 px-4">
+          <div className="rounded-2xl p-8 text-center border-2 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
+            <div className="w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center mx-auto mb-5">
+              <Loader2 className="w-10 h-10 text-blue-600 dark:text-blue-400 animate-spin" />
+            </div>
+            <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-200 mb-2">Esperando confirmación de pago</h2>
+            <p className="text-sm text-blue-700 dark:text-blue-300 mb-6">
+              Se abrió la ventana de MercadoPago. Completa el pago allí y esta pantalla se actualizará automáticamente.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => navigate("/reservas")} className="flex-1 py-3 border-2 border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 rounded-xl font-bold hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">Ver mis reservas</button>
+              <button onClick={() => { if (mpPollRef.current) clearInterval(mpPollRef.current); setMpWaiting(false); setMpReservaId(null); isConfirmedRef.current = false; }} className="flex-1 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Cancelar</button>
+            </div>
           </div>
         </div>
       </DashboardLayout>

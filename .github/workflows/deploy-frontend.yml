@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - develop
-      - feature/migracionGCP
 
 jobs:
   build_and_deploy:
@@ -27,11 +26,7 @@ jobs:
       # Configurar la URL del API Backend correspondiente según la rama activa
       - name: Set Environment Variables
         run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "VITE_API_URL=${{ secrets.VITE_API_URL_PROD }}" >> $GITHUB_ENV
-          else
-            echo "VITE_API_URL=${{ secrets.VITE_API_URL_DEV }}" >> $GITHUB_ENV
-          fi
+          echo "VITE_API_URL=${{ secrets.VITE_API_URL_DEV }}" >> $GITHUB_ENV
 
       # Compilar la aplicación React/Vite inyectando variables de entorno
       - name: Build Vite App

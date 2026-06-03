@@ -1,0 +1,52 @@
+name: Deploy Frontend to Firebase Hosting
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      # Instalar dependencias usando package-lock.json
+      - name: Install dependencies
+        run: npm ci
+
+      # Configurar la URL del API Backend correspondiente según la rama activa
+      - name: Set Environment Variables
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "VITE_API_URL=${{ secrets.VITE_API_URL_PROD }}" >> $GITHUB_ENV
+            echo "FIREBASE_CHANNEL=live" >> $GITHUB_ENV
+          else
+            echo "VITE_API_URL=${{ secrets.VITE_API_URL_DEV }}" >> $GITHUB_ENV
+            echo "FIREBASE_CHANNEL=live" >> $GITHUB_ENV
+          fi
+
+      # Compilar la aplicación React/Vite inyectando variables de entorno
+      - name: Build Vite App
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ env.VITE_API_URL }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
+          VITE_STRIPE_PK: ${{ secrets.VITE_STRIPE_PK }}
+
+      # Desplegar en Firebase Hosting usando la cuenta de servicio autorizada
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ secrets.GCP_PROJECT_ID }}
+          channelId: ${{ env.FIREBASE_CHANNEL }}

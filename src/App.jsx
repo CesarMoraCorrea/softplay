@@ -8,6 +8,7 @@ import ReservaDetalle from "./pages/ReservaDetalle.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import AdminCanchas from "./pages/admin/AdminCanchas.jsx";
 import AdminSistema from "./pages/admin/AdminSistema.jsx";
+import AdminStats from "./pages/admin/AdminStats.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 import { ThemeProvider } from "./contexts/ThemeContext.jsx";
@@ -113,6 +114,17 @@ export default function App() {
             <ProtectedRoute requireRoles={["admin_cancha", "admin_sistema"]}>
               <DashboardLayout>
                 <AdminCanchas />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/stats"
+          element={
+            <ProtectedRoute requireRoles={["admin_cancha", "admin_sistema"]}>
+              <DashboardLayout>
+                <AdminStats />
               </DashboardLayout>
             </ProtectedRoute>
           }

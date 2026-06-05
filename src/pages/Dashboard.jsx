@@ -212,11 +212,11 @@ const Dashboard = () => {
                 </Button>
               </Link>
               
-              {user?.rol === 'admin' && (
-                <Link to="/admin/reportes">
+              {(user?.role === 'admin_cancha' || user?.role === 'admin_sistema') && (
+                <Link to="/admin/stats">
                   <Button className="w-full justify-start" variant="outline">
                     <FiTrendingUp className="w-4 h-4 mr-2" />
-                    Ver Reportes
+                    Ver Estadísticas
                   </Button>
                 </Link>
               )}

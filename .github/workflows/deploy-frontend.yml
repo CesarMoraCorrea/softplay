@@ -35,6 +35,7 @@ jobs:
         env:
           VITE_API_URL: ${{ env.VITE_API_URL }}
           VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
+          VITE_GOOGLE_MAPS_MAP_ID: ${{ secrets.VITE_GOOGLE_MAPS_MAP_ID }}
           VITE_STRIPE_PK: ${{ secrets.VITE_STRIPE_PK }}
 
       # Desplegar en Firebase Hosting usando la cuenta de servicio autorizada
@@ -49,4 +50,5 @@ jobs:
           # Pasamos las variables aquí también por si el Action ejecuta una compilación interna
           VITE_API_URL: ${{ env.VITE_API_URL }}
           VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
+          VITE_GOOGLE_MAPS_MAP_ID: ${{ secrets.VITE_GOOGLE_MAPS_MAP_ID }}
           VITE_STRIPE_PK: ${{ secrets.VITE_STRIPE_PK }}

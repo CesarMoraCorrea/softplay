@@ -1,5 +1,17 @@
 {
   "projects": {
-    "default": "softplay"
+    "default": "softplay-490319"
+  },
+  "targets": {
+    "softplay-490319": {
+      "hosting": {
+        "prod": [
+          "softplay-490319"
+        ],
+        "dev": [
+          "softplay-490319-dev"
+        ]
+      }
+    }
   }
 }

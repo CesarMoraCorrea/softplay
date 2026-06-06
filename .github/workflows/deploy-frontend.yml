@@ -28,11 +28,11 @@ jobs:
         run: |
           if [ "${{ github.ref_name }}" = "main" ]; then
             echo "VITE_API_URL=${{ secrets.VITE_API_URL_PROD }}" >> $GITHUB_ENV
-            echo "FIREBASE_SITE=softplay-490319" >> $GITHUB_ENV
+            echo "FIREBASE_TARGET=prod" >> $GITHUB_ENV
             echo "VITE_STRIPE_PK=${{ secrets.VITE_STRIPE_PK_PROD }}" >> $GITHUB_ENV
           else
             echo "VITE_API_URL=${{ secrets.VITE_API_URL_DEV }}" >> $GITHUB_ENV
-            echo "FIREBASE_SITE=softplay-490319-dev" >> $GITHUB_ENV
+            echo "FIREBASE_TARGET=dev" >> $GITHUB_ENV
             echo "VITE_STRIPE_PK=${{ secrets.VITE_STRIPE_PK_DEV }}" >> $GITHUB_ENV
           fi
 
@@ -53,7 +53,7 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: ${{ secrets.GCP_PROJECT_ID }}
           channelId: live
-          site: ${{ env.FIREBASE_SITE }}
+          target: ${{ env.FIREBASE_TARGET }}
         env:
           # Pasamos las variables aquí también por si el Action ejecuta una compilación interna
           VITE_API_URL: ${{ env.VITE_API_URL }}

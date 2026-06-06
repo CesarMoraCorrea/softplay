@@ -28,11 +28,11 @@ jobs:
         run: |
           if [ "${{ github.ref_name }}" = "main" ]; then
             echo "VITE_API_URL=${{ secrets.VITE_API_URL_PROD }}" >> $GITHUB_ENV
-            echo "FIREBASE_SITE=${{ secrets.FIREBASE_SITE_PROD || 'softplay-490319' }}" >> $GITHUB_ENV
+            echo "FIREBASE_SITE=softplay-490319" >> $GITHUB_ENV
             echo "VITE_STRIPE_PK=${{ secrets.VITE_STRIPE_PK_PROD }}" >> $GITHUB_ENV
           else
             echo "VITE_API_URL=${{ secrets.VITE_API_URL_DEV }}" >> $GITHUB_ENV
-            echo "FIREBASE_SITE=${{ secrets.FIREBASE_SITE_DEV || 'softplay-490319-dev' }}" >> $GITHUB_ENV
+            echo "FIREBASE_SITE=softplay-490319-dev" >> $GITHUB_ENV
             echo "VITE_STRIPE_PK=${{ secrets.VITE_STRIPE_PK_DEV }}" >> $GITHUB_ENV
           fi
 

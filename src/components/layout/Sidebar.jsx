@@ -8,6 +8,7 @@ import {
   FiChevronDown,
   FiChevronRight,
   FiX,
+  FiTrendingUp,
 } from "react-icons/fi";
 import { MdSportsSoccer, MdAdminPanelSettings } from "react-icons/md";
 import { logout } from "../../redux/slices/authSlice";
@@ -62,6 +63,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           label: "Gestión de Sedes y Escenarios",
           icon: MdSportsSoccer,
           path: "/admin/canchas",
+          roles: ["admin_cancha", "admin_sistema"],
+        },
+        {
+          key: "admin-stats",
+          label: "Estadísticas",
+          icon: FiTrendingUp,
+          path: "/admin/stats",
           roles: ["admin_cancha", "admin_sistema"],
         },
         {

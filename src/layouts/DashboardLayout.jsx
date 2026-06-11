@@ -1,12 +1,12 @@
 // Componente: DashboardLayout
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { FiMenu, FiLogOut, FiCalendar, FiSettings } from "react-icons/fi";
+import { FiMenu, FiLogOut, FiCalendar, FiSettings, FiTrendingUp } from "react-icons/fi";
 import { FaSun, FaMoon } from "react-icons/fa";
 import { MdAdminPanelSettings } from "react-icons/md";
 import Sidebar from "../components/layout/Sidebar";
 import { useLocation, Link, useNavigate } from "react-router-dom";
-import { Home, MapPin } from "lucide-react";
+import { Home, MapPin, Building2 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { logout } from "../redux/slices/authSlice";
 
@@ -30,7 +30,8 @@ const DashboardLayout = ({ children }) => {
   ] : [];
 
   const adminNav = (user?.role === "admin_cancha" || user?.role === "admin_sistema") ? [
-    { name: "Admin", href: "/admin/canchas", icon: <MdAdminPanelSettings className="w-4 h-4" /> },
+    { name: "Admin Canchas", href: "/admin/canchas", icon: <Building2 className="w-4 h-4" /> },
+    { name: "Estadísticas", href: "/admin/stats", icon: <FiTrendingUp className="w-4 h-4" /> },
   ] : [];
 
   const sistemNav = user?.role === "admin_sistema" ? [

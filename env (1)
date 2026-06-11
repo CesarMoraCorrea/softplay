@@ -1,0 +1,6 @@
+# Frontend
+# VITE_API_URL=http://localhost:5000/api
+VITE_GOOGLE_MAPS_API_KEY=AIzaSyABt-PTCegvO5uIc2liaeySeKyas_70Xy4
+VITE_STRIPE_PK=pk_test_***
+
+VITE_GOOGLE_MAPS_MAP_ID=t751ec908bc0e068c5be87ade

@@ -34,6 +34,86 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, onVerEscenarios, userLoc
   // Bloquea el auto-fit cuando volvemos a /canchas
   const [suppressFitBounds, setSuppressFitBounds] = useState(false);
 
+  // Referencia para manejar el retraso del cierre del popup (hover-bridge)
+  const closeTimeoutRef = useRef(null);
+  const popupRef = useRef(null);
+
+  // Fallback de eventos nativos para asegurar que el hover sobre el pop-up no se cancele por capas de Google Maps
+  useEffect(() => {
+    const el = popupRef.current;
+    if (!el) return;
+
+    const onEnter = () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+      }
+    };
+
+    const onLeave = () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+      closeTimeoutRef.current = setTimeout(() => {
+        setSelectedCancha(null);
+      }, 300);
+    };
+
+    el.addEventListener("mouseenter", onEnter);
+    el.addEventListener("mouseleave", onLeave);
+
+    return () => {
+      el.removeEventListener("mouseenter", onEnter);
+      el.removeEventListener("mouseleave", onLeave);
+    };
+  }, [selectedCancha]);
+
+  // Manejar entrada del mouse a un marcador
+  const handleMarkerHoverIn = useCallback((cancha) => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setSelectedCancha(cancha);
+  }, []);
+
+  // Manejar salida del mouse de un marcador
+  const handleMarkerHoverOut = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+    closeTimeoutRef.current = setTimeout(() => {
+      setSelectedCancha(null);
+    }, 300); // 300ms de retraso para evitar parpadeos y permitir transición al popup
+  }, []);
+
+  // Mantener abierto el popup cuando el mouse entra a él
+  const handlePopupMouseEnter = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Cerrar el popup cuando el mouse sale de él
+  const handlePopupMouseLeave = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+    closeTimeoutRef.current = setTimeout(() => {
+      setSelectedCancha(null);
+    }, 300);
+  }, []);
+
+  // Limpiar el timeout al desmontar
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Geoloc automática si no viene por props
   const [autoUserLocation, setAutoUserLocation] = useState(null);
 
@@ -392,10 +472,12 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, onVerEscenarios, userLoc
         markerEl.addEventListener('mouseenter', () => {
           markerEl.style.transform = 'scale(1.15) translateY(-4px)';
           markerEl.style.filter = 'drop-shadow(0 8px 12px rgba(0,0,0,0.4))';
+          handleMarkerHoverIn(cancha);
         });
         markerEl.addEventListener('mouseleave', () => {
           markerEl.style.transform = 'scale(1) translateY(0)';
           markerEl.style.filter = 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))';
+          handleMarkerHoverOut();
         });
 
         const imgContainer = document.createElement('div');
@@ -449,6 +531,12 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, onVerEscenarios, userLoc
         marker.addListener("click", () => {
           handleMarkerClick(cancha);
         });
+        marker.addListener("mouseover", () => {
+          handleMarkerHoverIn(cancha);
+        });
+        marker.addListener("mouseout", () => {
+          handleMarkerHoverOut();
+        });
       }
 
       created.push(marker);
@@ -461,7 +549,7 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, onVerEscenarios, userLoc
       canchaAdvancedMarkersRef.current.forEach(clearMarker);
       canchaAdvancedMarkersRef.current = [];
     };
-  }, [map, isLoaded, canchas, currentUserLocation, navigate, onCanchaSelect]);
+  }, [map, isLoaded, canchas, currentUserLocation, navigate, onCanchaSelect, handleMarkerHoverIn, handleMarkerHoverOut]);
 
   useEffect(() => {
     if (isLoaded) {
@@ -629,24 +717,27 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, onVerEscenarios, userLoc
             mapPaneName={OverlayView.FLOAT_PANE}
           >
             <div
-              className="relative shadow-2xl rounded-[12px] bg-white w-[280px] sm:w-[320px] text-left popup-card-animated"
+              ref={popupRef}
+              className="relative shadow-2xl rounded-[12px] bg-white w-[250px] sm:w-[260px] text-left popup-card-animated"
+              onMouseEnter={handlePopupMouseEnter}
+              onMouseLeave={handlePopupMouseLeave}
             >
               {/* Close Button Inside the Card Overlay */}
               <button
-                className="absolute top-2 right-2 bg-black/50 hover:bg-red-600 transition-colors w-7 h-7 rounded-full flex items-center justify-center z-20 shadow-md text-white"
+                className="absolute top-1.5 right-1.5 bg-black/50 hover:bg-red-600 transition-colors w-6 h-6 rounded-full flex items-center justify-center z-20 shadow-md text-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleInfoWindowClose();
                 }}
               >
-                <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor' className="w-4 h-4" strokeWidth='2.5'>
+                <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor' className="w-3.5 h-3.5" strokeWidth='2.5'>
                   <path strokeLinecap='round' strokeLinejoin='round' d='M6 18L18 6M6 6l12 12' />
                 </svg>
               </button>
 
               <div className="flex flex-col overflow-hidden w-full font-sans relative" style={{ borderRadius: '12px' }}>
                 {/* Header Cover Image */}
-                <div className="h-40 w-full bg-gray-100 relative" style={{ borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}>
+                <div className="h-[110px] w-full bg-gray-100 relative" style={{ borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}>
                   {selectedCancha.imagenes?.[0] ? (
                     <img
                       src={selectedCancha.imagenes[0]}
@@ -655,78 +746,78 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, onVerEscenarios, userLoc
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-200/50">
-                      <MapPin className="w-10 h-10 opacity-30" />
+                      <MapPin className="w-8 h-8 opacity-30" />
                     </div>
                   )}
 
-                  {/* Top-Right: Price Badge */}
+                  {/* Bottom-Right: Price Badge (Avoids overlapping with Close Button at Top-Right) */}
                   {selectedCancha.precioHora > 0 && (
-                    <div className="absolute top-2 right-2 flex items-center gap-1 bg-white/95 backdrop-blur-md text-gray-900 px-2 py-1 rounded shadow-sm text-[11px] font-bold">
-                      <DollarSign className="w-3 h-3 text-green-600" />
+                    <div className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5 bg-white/95 backdrop-blur-md text-gray-900 px-1.5 py-0.5 rounded shadow-sm text-[10px] font-bold">
+                      <DollarSign className="w-2.5 h-2.5 text-green-600" />
                       S/ {selectedCancha.precioHora}/h
                     </div>
                   )}
 
                   {/* Top-Left: Barrio (If available) */}
                   {selectedCancha.barrio && (
-                    <div className="absolute top-2 left-2 flex items-center bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded text-[10px] font-medium tracking-wide shadow-sm">
+                    <div className="absolute top-1.5 left-1.5 flex items-center bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded text-[9px] font-medium tracking-wide shadow-sm">
                       {selectedCancha.barrio}
                     </div>
                   )}
 
                   {/* Bottom-Left: Rating Badge */}
                   {selectedCancha.calificacion && (
-                    <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/95 backdrop-blur-md text-gray-800 px-2.5 py-1 rounded text-[11px] font-bold shadow-sm">
-                      <Star className="w-3.5 h-3.5 text-yellow-500 fill-current" />
+                    <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 bg-white/95 backdrop-blur-md text-gray-800 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm">
+                      <Star className="w-3 h-3 text-yellow-500 fill-current" />
                       <span>{selectedCancha.calificacion.toFixed(1)}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Content Body */}
-                <div className="p-3.5 pb-5 flex flex-col gap-2.5">
+                <div className="p-2.5 pb-3 flex flex-col gap-2">
                   {/* Title and Address Row */}
                   <div>
-                    <h3 className="font-extrabold text-gray-900 text-base leading-tight truncate">
+                    <h3 className="font-extrabold text-gray-900 text-[14px] leading-tight truncate">
                       {selectedCancha.nombre}
                     </h3>
-                    <div className="flex items-start gap-1 mt-1 text-gray-500">
-                      <MapPin className="w-3.5 h-3.5 mt-[2px] flex-shrink-0" />
-                      <span className="text-xs line-clamp-1 leading-snug">
+                    <div className="flex items-start gap-0.5 mt-0.5 text-gray-500">
+                      <MapPin className="w-3 h-3 mt-[2px] flex-shrink-0" />
+                      <span className="text-[11px] line-clamp-1 leading-snug">
                         {selectedCancha.direccion || "Dirección no disponible"}
                       </span>
                     </div>
                   </div>
 
                   {/* Details Grid (Horarios / Escenarios) */}
-                  <div className="grid grid-cols-2 gap-2 pb-1 border-b border-gray-100">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                      <Clock className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                  <div className="grid grid-cols-2 gap-1 pb-1 border-b border-gray-100">
+                    <div className="flex items-center gap-1 text-[11px] text-gray-600">
+                      <Clock className="w-3 h-3 text-blue-500 flex-shrink-0" />
                       <span className="truncate" title={obtenerHorarioHoy(selectedCancha.horarios)}>
                         {obtenerHorarioHoy(selectedCancha.horarios)}
                       </span>
                     </div>
 
                     {selectedCancha.isSede && (
-                      <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                        <MapPin className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-                        <span className="font-semibold text-gray-700">
-                          {selectedCancha.escenariosCount || 0} {/* fallback if undefined */} Escenarios
+                      <div className="flex items-center gap-1 text-[11px] text-gray-600">
+                        <MapPin className="w-3 h-3 text-green-500 flex-shrink-0" />
+                        <span className="font-semibold text-gray-700 text-[11px]">
+                          {selectedCancha.escenariosCount || 0} Escenarios
                         </span>
                       </div>
                     )}
                   </div>
 
-                  {/* Amenities Row (Icons only to save space) */}
+                  {/* Amenities Row */}
                   {selectedCancha.servicios && selectedCancha.servicios.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 w-full mt-0.5 mb-1">
+                    <div className="flex flex-wrap gap-1 w-full mt-0.5 mb-0.5">
                       {selectedCancha.servicios.slice(0, 5).map((servicio, idx) => (
-                        <div key={idx} className="bg-gray-100/80 text-gray-600 text-[9px] font-semibold px-2 py-1 rounded uppercase tracking-wider">
+                        <div key={idx} className="bg-gray-100/80 text-gray-600 text-[8.5px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider">
                           {servicio}
                         </div>
                       ))}
                       {selectedCancha.servicios.length > 5 && (
-                        <div className="bg-gray-100/80 text-gray-500 text-[9px] font-bold px-1.5 py-1 rounded">
+                        <div className="bg-gray-100/80 text-gray-500 text-[8.5px] font-bold px-1 py-0.5 rounded">
                           +{selectedCancha.servicios.length - 5}
                         </div>
                       )}
@@ -741,7 +832,7 @@ function GoogleMapsView({ canchas = [], onCanchaSelect, onVerEscenarios, userLoc
                       if (url) { navigate(url); }
                       else if (onVerEscenarios) onVerEscenarios(selectedCancha);
                     }}
-                    className="w-full mt-1 flex items-center justify-center py-2.5 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 transform hover:-translate-y-0.5 active:scale-95 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full mt-1 flex items-center justify-center py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 transform hover:-translate-y-0.5 active:scale-95 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!puedeReservar(selectedCancha)}
                   >
                     {selectedCancha?.isSede ? "Reservar aquí" : getReservaId(selectedCancha) ? "Reservar ahora" : "Ver escenarios disponibles"}
